@@ -1,0 +1,29 @@
+{
+  "name": "drewvidend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Drewvidend - PWA dividendi Borsa Italiana",
+  "scripts": {
+    "dev": "wrangler pages dev --port 8788 -- vite",
+    "dev:ui": "vite",
+    "build": "vite build",
+    "preview": "npm run build && wrangler pages dev dist --port 8788",
+    "deploy": "npm run build && wrangler pages deploy dist",
+    "universe": "python scripts/gen_universe.py"
+  },
+  "dependencies": {
+    "@fontsource/manrope": "^5.2.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.0.7",
+    "vite-plugin-pwa": "^0.21.1",
+    "wrangler": "^3.99.0"
+  }
+}

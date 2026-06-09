@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  height: 100%;
+  background: #14161b; /* copre l'overscroll/canvas: niente cambio colore scrollando */
+}
+
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #14161b;
+  color: #eceef2;
+  font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+  font-variant-numeric: tabular-nums; /* numeri allineati ovunque */
+}
+
+/* nasconde scrollbar orizzontale nelle chip */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* safe-area per tab bar in basso su iPhone */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 4.5rem);
+}
+.tabbar-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}

@@ -1,0 +1,1514 @@
+[
+{
+"symbol": "A2A.MI",
+"name": "A2A S.p.A."
+},
+{
+"symbol": "AAT.MI",
+"name": "AATECH S.p.A. Società Benefit"
+},
+{
+"symbol": "ABP.MI",
+"name": "Azienda Bresciana Petroli Nocivelli S.p.A."
+},
+{
+"symbol": "ABT.MI",
+"name": "Abitare In S.p.A."
+},
+{
+"symbol": "ABTG.MI",
+"name": "Alfio Bardolla Training Group S.p.A."
+},
+{
+"symbol": "AC5.MI",
+"name": "Acinque S.p.A."
+},
+{
+"symbol": "ACE.MI",
+"name": "ACEA S.p.A."
+},
+{
+"symbol": "ADB.MI",
+"name": "Aeroporto Guglielmo Marconi di Bologna S.p.A."
+},
+{
+"symbol": "ADV.MI",
+"name": "Adventure S.p.A."
+},
+{
+"symbol": "AEDES.MI",
+"name": "Aedes Spa"
+},
+{
+"symbol": "AEF.MI",
+"name": "Aeffe S.p.A."
+},
+{
+"symbol": "AGP.MI",
+"name": "Altea Green Power S.p.A."
+},
+{
+"symbol": "AIM.MI",
+"name": "4AIM SICAF S.p.A."
+},
+{
+"symbol": "ALFO.MI",
+"name": "ALFONSINO"
+},
+{
+"symbol": "AMB.MI",
+"name": "Ambromobiliare S.p.A."
+},
+{
+"symbol": "AMI.MI",
+"name": "Friends S.p.A."
+},
+{
+"symbol": "AMP.MI",
+"name": "Amplifon S.p.A."
+},
+{
+"symbol": "ANIM.MI",
+"name": "Anima Holding SpA"
+},
+{
+"symbol": "ARBS.MI",
+"name": "ARTERRA BIOSCIENCE"
+},
+{
+"symbol": "ARIS.MI",
+"name": "Ariston Holding N.V."
+},
+{
+"symbol": "ARN.MI",
+"name": "Alerion Clean Power S.p.A."
+},
+{
+"symbol": "ART.MI",
+"name": "Deodato.Gallery S.p.A."
+},
+{
+"symbol": "ASC.MI",
+"name": "Ascopiave S.p.A."
+},
+{
+"symbol": "ATON.MI",
+"name": "ATON Green Storage S.p.A."
+},
+{
+"symbol": "AUTME.MI",
+"name": "Autostrade Meridionali S.p.A."
+},
+{
+"symbol": "AVIO.MI",
+"name": "Avio S.p.A."
+},
+{
+"symbol": "AZM.MI",
+"name": "Azimut Holding S.p.A."
+},
+{
+"symbol": "B.MI",
+"name": "Bastogi S.p.A."
+},
+{
+"symbol": "BAMI.MI",
+"name": "Banco BPM S.p.A."
+},
+{
+"symbol": "BAN.MI",
+"name": "BasicNet S.p.A."
+},
+{
+"symbol": "BC.MI",
+"name": "Brunello Cucinelli S.p.A."
+},
+{
+"symbol": "BDB.MI",
+"name": "Banco di Desio e della Brianza S.p.A."
+},
+{
+"symbol": "BEC.MI",
+"name": "B&C Speakers S.p.A."
+},
+{
+"symbol": "BELL.MI",
+"name": "Bellini Nautica S.p.A."
+},
+{
+"symbol": "BFF.MI",
+"name": "BFF Bank S.p.A."
+},
+{
+"symbol": "BFG.MI",
+"name": "B.F. S.p.A."
+},
+{
+"symbol": "BGN.MI",
+"name": "Banca Generali S.p.A."
+},
+{
+"symbol": "BMED.MI",
+"name": "Banca Mediolanum S.p.A."
+},
+{
+"symbol": "BMPS.MI",
+"name": "Banca Monte dei Paschi di Siena S.p.A."
+},
+{
+"symbol": "BO.MI",
+"name": "Borgosesia S.p.A."
+},
+{
+"symbol": "BPE.MI",
+"name": "BPER Banca SpA"
+},
+{
+"symbol": "BRE.MI",
+"name": "Brembo N.V."
+},
+{
+"symbol": "BRI.MI",
+"name": "Brioschi Sviluppo Immobiliare S.p.A."
+},
+{
+"symbol": "BRM.MI",
+"name": "BRAGA MORO"
+},
+{
+"symbol": "BSS.MI",
+"name": "Biesse S.p.A."
+},
+{
+"symbol": "BST.MI",
+"name": "Banca Sistema S.p.A."
+},
+{
+"symbol": "BWZ.MI",
+"name": "Beewize S.p.A."
+},
+{
+"symbol": "BZU.MI",
+"name": "Buzzi S.p.A."
+},
+{
+"symbol": "CAI.MI",
+"name": "Cairo Communication S.p.A."
+},
+{
+"symbol": "CALT.MI",
+"name": "Caltagirone SpA"
+},
+{
+"symbol": "CBB.MI",
+"name": "CleanBnB S.p.A."
+},
+{
+"symbol": "CDG.MI",
+"name": "Casta Diva Group S.p.A."
+},
+{
+"symbol": "CE.MI",
+"name": "Credito Emiliano S.p.A."
+},
+{
+"symbol": "CED.MI",
+"name": "Caltagirone Editore SpA"
+},
+{
+"symbol": "CELL.MI",
+"name": "Cellularline S.p.A."
+},
+{
+"symbol": "CEM.MI",
+"name": "Cementir Holding N.V."
+},
+{
+"symbol": "CFL.MI",
+"name": "Cofle S.p.A."
+},
+{
+"symbol": "CFM.MI",
+"name": "CrowdFundMe S.p.A."
+},
+{
+"symbol": "CFV.MI",
+"name": "Confinvest Oro S.p.A."
+},
+{
+"symbol": "CGF.MI",
+"name": "Cogefeed S.p.A."
+},
+{
+"symbol": "CIR.MI",
+"name": "CIR S.p.A. - Compagnie Industriali Riunite"
+},
+{
+"symbol": "CIRC.MI",
+"name": "Circle S.p.A."
+},
+{
+"symbol": "CLE.MI",
+"name": "Class Editori Spa"
+},
+{
+"symbol": "CLF.MI",
+"name": "Caleffi S.p.A."
+},
+{
+"symbol": "CLI.MI",
+"name": "Centrale del Latte d'Italia S.p.A."
+},
+{
+"symbol": "CMB.MI",
+"name": "Cembre S.p.A."
+},
+{
+"symbol": "CMTL.MI",
+"name": "Com.Tel S.p.A."
+},
+{
+"symbol": "COM.MI",
+"name": "Comer Industries S.p.A."
+},
+{
+"symbol": "COP.MI",
+"name": "Copernico Sim S.p.A."
+},
+{
+"symbol": "CORE.MI",
+"name": "Soluzione Tasse S.p.A."
+},
+{
+"symbol": "COSMO.MI",
+"name": "Farmacosmo S.p.A."
+},
+{
+"symbol": "CPR.MI",
+"name": "Davide Campari-Milano N.V."
+},
+{
+"symbol": "CRL.MI",
+"name": "Carel Industries S.p.A."
+},
+{
+"symbol": "CSP.MI",
+"name": "CSP International Fashion Group S.p.A."
+},
+{
+"symbol": "CULT.MI",
+"name": "CULTI Milano S.p.A."
+},
+{
+"symbol": "CVG.MI",
+"name": "Convergenze S.p.A. Società Benefit"
+},
+{
+"symbol": "CY4.MI",
+"name": "Cy4gate S.p.A."
+},
+{
+"symbol": "CYB.MI",
+"name": "Cyberoo S.p.A."
+},
+{
+"symbol": "D.MI",
+"name": "Directa Sim S.p.A."
+},
+{
+"symbol": "DAL.MI",
+"name": "Datalogic S.p.A."
+},
+{
+"symbol": "DAN.MI",
+"name": "Danieli & C. Officine Meccaniche S.p.A."
+},
+{
+"symbol": "DANR.MI",
+"name": "Danieli & C. Officine Meccaniche S.p.A."
+},
+{
+"symbol": "DATA.MI",
+"name": "Datrix S.p.A."
+},
+{
+"symbol": "DBA.MI",
+"name": "DBA Group S.p.A."
+},
+{
+"symbol": "DDM.MI",
+"name": "Dedem S.p.A."
+},
+{
+"symbol": "DEA.MI",
+"name": "Distribuzione Elettrica Adriatica S.p.a."
+},
+{
+"symbol": "DEX.MI",
+"name": "Dexelance S.p.A."
+},
+{
+"symbol": "DGT.MI",
+"name": "DigiTouch S.p.A."
+},
+{
+"symbol": "DHH.MI",
+"name": "Dominion Hosting Holding S.p.A."
+},
+{
+"symbol": "DIA.MI",
+"name": "DiaSorin S.p.A."
+},
+{
+"symbol": "DIAD.MI",
+"name": "Diadema Capital S.p.A. Società Benefit"
+},
+{
+"symbol": "DIB.MI",
+"name": "Digital Bros S.p.A."
+},
+{
+"symbol": "DIS.MI",
+"name": "d'Amico International Shipping S.A."
+},
+{
+"symbol": "DIT.MI",
+"name": "Destination Italia S.p.A."
+},
+{
+"symbol": "DLG.MI",
+"name": "De'Longhi S.p.A."
+},
+{
+"symbol": "DNR.MI",
+"name": "Industrie De Nora S.p.A."
+},
+{
+"symbol": "DOT.MI",
+"name": "Dotstay S.P.A"
+},
+{
+"symbol": "DOV.MI",
+"name": "doValue S.p.A."
+},
+{
+"symbol": "DOX.MI",
+"name": "Doxee S.p.A."
+},
+{
+"symbol": "EAV.MI",
+"name": "Emma Villas S.p.A."
+},
+{
+"symbol": "ECK.MI",
+"name": "Ecosuntek S.p.A."
+},
+{
+"symbol": "ECMB.MI",
+"name": "Ecomembrane S.p.A."
+},
+{
+"symbol": "ECMPM.MI",
+"name": "Eurocommercial Properties N.V."
+},
+{
+"symbol": "ECNL.MI",
+"name": "Aquafil S.p.A."
+},
+{
+"symbol": "EDNR.MI",
+"name": "Edison S.p.A."
+},
+{
+"symbol": "EGB.MI",
+"name": "E-Globe S.p.A."
+},
+{
+"symbol": "EGLA.MI",
+"name": "EuroGroup Laminations S.p.A."
+},
+{
+"symbol": "ELB.MI",
+"name": "EDGELAB"
+},
+{
+"symbol": "ELC.MI",
+"name": "Elica S.p.A."
+},
+{
+"symbol": "ELN.MI",
+"name": "EL.En. S.p.A."
+},
+{
+"symbol": "ELSA.MI",
+"name": "ELSA Solutions S.p.A."
+},
+{
+"symbol": "EM.MI",
+"name": "Emak S.p.A."
+},
+{
+"symbol": "ENA.MI",
+"name": "ENA"
+},
+{
+"symbol": "ENAV.MI",
+"name": "ENAV S.p.A."
+},
+{
+"symbol": "ENEL.MI",
+"name": "Enel SpA"
+},
+{
+"symbol": "ENI.MI",
+"name": "Eni S.p.A."
+},
+{
+"symbol": "ENV.MI",
+"name": "Enervit S.p.A."
+},
+{
+"symbol": "ENY.MI",
+"name": "Energy S.p.A."
+},
+{
+"symbol": "EPH.MI",
+"name": "EPH Invest S.p.A."
+},
+{
+"symbol": "EPRB.MI",
+"name": "Eprcomunicazione S.p.A."
+},
+{
+"symbol": "EQUI.MI",
+"name": "Equita Group S.p.A."
+},
+{
+"symbol": "ERFO.MI",
+"name": "Laboratorio Farmaceutico Erfo S.p.A."
+},
+{
+"symbol": "ERG.MI",
+"name": "ERG S.p.A."
+},
+{
+"symbol": "ESAU.MI",
+"name": "Esautomotion S.p.A."
+},
+{
+"symbol": "ESF.MI",
+"name": "Edil San Felice S.p.A."
+},
+{
+"symbol": "ESIGM.MI",
+"name": "ESI S.p.A."
+},
+{
+"symbol": "ESPE.MI",
+"name": "Espe S.p.A."
+},
+{
+"symbol": "ESTM.MI",
+"name": "Estrima S.p.A."
+},
+{
+"symbol": "ET.MI",
+"name": "Energy Time S.P.A."
+},
+{
+"symbol": "ETH.MI",
+"name": "Eurotech S.p.A."
+},
+{
+"symbol": "ETS.MI",
+"name": "E.T.S. S.P.A. Engineering and Technical Services"
+},
+{
+"symbol": "EUK.MI",
+"name": "EuKedos S.p.A."
+},
+{
+"symbol": "EVISO.MI",
+"name": "eVISO S.p.A."
+},
+{
+"symbol": "EXAI.MI",
+"name": "Expert.ai S.p.A."
+},
+{
+"symbol": "EXEC.MI",
+"name": "Execus S.p.A."
+},
+{
+"symbol": "FAE.MI",
+"name": "FAE Technology S.p.A."
+},
+{
+"symbol": "FARM.MI",
+"name": "H-FARM S.p.A."
+},
+{
+"symbol": "FBK.MI",
+"name": "FinecoBank Banca Fineco S.p.A."
+},
+{
+"symbol": "FCH.MI",
+"name": "Franchetti S.p.A."
+},
+{
+"symbol": "FCT.MI",
+"name": "Fincantieri S.p.A."
+},
+{
+"symbol": "FDA.MI",
+"name": "Fidia S.p.A."
+},
+{
+"symbol": "FF.MI",
+"name": "Fine Foods & Pharmaceuticals N.T.M. S.p.A."
+},
+{
+"symbol": "FIC.MI",
+"name": "First Capital S.p.A."
+},
+{
+"symbol": "FILA.MI",
+"name": "F.I.L.A. - Fabbrica Italiana Lapis ed Affini S.p.A."
+},
+{
+"symbol": "FM.MI",
+"name": "Fiera Milano S.p.A."
+},
+{
+"symbol": "FNM.MI",
+"name": "FNM S.p.A."
+},
+{
+"symbol": "FPE.MI",
+"name": "Fope S.p.A."
+},
+{
+"symbol": "FRE.MI",
+"name": "Frendy Energy S.p.A."
+},
+{
+"symbol": "FTC.MI",
+"name": "Finanza.tech S.p.A."
+},
+{
+"symbol": "FUM.MI",
+"name": "Franchi Umberto Marmi S.p.A."
+},
+{
+"symbol": "G.MI",
+"name": "Assicurazioni Generali S.p.A."
+},
+{
+"symbol": "GAB.MI",
+"name": "Gabetti Property Solutions S.p.A."
+},
+{
+"symbol": "GAMB.MI",
+"name": "Gambero Rosso S.p.A."
+},
+{
+"symbol": "GCOM.MI",
+"name": "Giglio.com S.p.A."
+},
+{
+"symbol": "GE.MI",
+"name": "Gefran S.p.A."
+},
+{
+"symbol": "GEL.MI",
+"name": "Gel S.p.A."
+},
+{
+"symbol": "GEO.MI",
+"name": "Geox S.p.A."
+},
+{
+"symbol": "GF.MI",
+"name": "Generalfinance S.p.A."
+},
+{
+"symbol": "GHC.MI",
+"name": "Garofalo Health Care S.p.A."
+},
+{
+"symbol": "GIS.MI",
+"name": "Gismondi 1754 S.p.A."
+},
+{
+"symbol": "GM.MI",
+"name": "Gentili Mosconi S.p.A."
+},
+{
+"symbol": "GML.MI",
+"name": "G.M. Leather S.p.A."
+},
+{
+"symbol": "GMS.MI",
+"name": "Giocamondo Study S.p.A."
+},
+{
+"symbol": "GPI.MI",
+"name": "GPI S.p.A."
+},
+{
+"symbol": "GRAL.MI",
+"name": "Grifal S.p.A."
+},
+{
+"symbol": "GRN.MI",
+"name": "Green Oleo S.p.A."
+},
+{
+"symbol": "GROW.MI",
+"name": "Growens S.p.A."
+},
+{
+"symbol": "GSP.MI",
+"name": "Gas Plus S.p.A."
+},
+{
+"symbol": "GVS.MI",
+"name": "GVS S.p.A."
+},
+{
+"symbol": "HER.MI",
+"name": "Hera S.p.A."
+},
+{
+"symbol": "HIK.MI",
+"name": "HAIKI+"
+},
+{
+"symbol": "HLX.MI",
+"name": "Helyx Industries S.p.A."
+},
+{
+"symbol": "HQF.MI",
+"name": "High Quality Food S.p.A."
+},
+{
+"symbol": "IB.MI",
+"name": "Iniziative Bresciane S.p.A."
+},
+{
+"symbol": "ICF.MI",
+"name": "Industrie Chimiche Forestali S.p.A."
+},
+{
+"symbol": "ICOP.MI",
+"name": "I.CO.P. S.p.A. Società Benefit"
+},
+{
+"symbol": "ICOS.MI",
+"name": "Intercos S.p.A."
+},
+{
+"symbol": "IDNTT.MI",
+"name": "IDNTT SA"
+},
+{
+"symbol": "IEG.MI",
+"name": "Italian Exhibition Group S.p.A."
+},
+{
+"symbol": "IF.MI",
+"name": "Banca IFIS S.p.A."
+},
+{
+"symbol": "IG.MI",
+"name": "Italgas S.p.A."
+},
+{
+"symbol": "IGD.MI",
+"name": "Immobiliare Grande Distribuzione SIIQ S.p.A."
+},
+{
+"symbol": "IGV.MI",
+"name": "I Grandi Viaggi S.p.A."
+},
+{
+"symbol": "ILP.MI",
+"name": "ILPRA S.p.A."
+},
+{
+"symbol": "IMD.MI",
+"name": "I.M.D. International Medical Devices S.p.A."
+},
+{
+"symbol": "IMS.MI",
+"name": "Immsi S.p.A."
+},
+{
+"symbol": "INC.MI",
+"name": "Innovatec S.p.A."
+},
+{
+"symbol": "INDB.MI",
+"name": "Indel B S.p.A."
+},
+{
+"symbol": "INW.MI",
+"name": "Infrastrutture Wireless Italiane S.p.A."
+},
+{
+"symbol": "IOT.MI",
+"name": "Seco S.p.A."
+},
+{
+"symbol": "IP.MI",
+"name": "Interpump Group S.p.A."
+},
+{
+"symbol": "IRC.MI",
+"name": "IRCE S.p.A."
+},
+{
+"symbol": "IRE.MI",
+"name": "Iren SpA"
+},
+{
+"symbol": "ISC.MI",
+"name": "Integrated System Credit Consulting Fintech S.p.A."
+},
+{
+"symbol": "ISP.MI",
+"name": "Intesa Sanpaolo S.p.A."
+},
+{
+"symbol": "ITD.MI",
+"name": "Intred S.p.A."
+},
+{
+"symbol": "ITM.MI",
+"name": "Italmobiliare S.p.A."
+},
+{
+"symbol": "ITW.MI",
+"name": "Itway S.p.A."
+},
+{
+"symbol": "IVG.MI",
+"name": "Iveco Group N.V."
+},
+{
+"symbol": "IVN.MI",
+"name": "iVision Tech S.p.A."
+},
+{
+"symbol": "IWB.MI",
+"name": "Italian Wine Brands S.p.A."
+},
+{
+"symbol": "JUVE.MI",
+"name": "Juventus Football Club S.p.A."
+},
+{
+"symbol": "KK.MI",
+"name": "Kruso Kapital S.p.A."
+},
+{
+"symbol": "KLN.MI",
+"name": "KALEON"
+},
+{
+"symbol": "KME.MI",
+"name": "KME Group S.p.A."
+},
+{
+"symbol": "KMER.MI",
+"name": "KME Group S.p.A."
+},
+{
+"symbol": "LDB.MI",
+"name": "Lindbergh S.p.A."
+},
+{
+"symbol": "LDO.MI",
+"name": "Leonardo S.p.a."
+},
+{
+"symbol": "LFG.MI",
+"name": "Leone Film Group S.p.A."
+},
+{
+"symbol": "LMG.MI",
+"name": "Lucisano Media Group S.p.A."
+},
+{
+"symbol": "LNDR.MI",
+"name": "Landi Renzo S.p.A."
+},
+{
+"symbol": "LON.MI",
+"name": "Longino & Cardenal S.p.A."
+},
+{
+"symbol": "LS.MI",
+"name": "LEMON SISTEMI"
+},
+{
+"symbol": "LTMC.MI",
+"name": "Lottomatica Group S.p.A."
+},
+{
+"symbol": "LTX.MI",
+"name": "Litix S.p.A."
+},
+{
+"symbol": "LUVE.MI",
+"name": "LU-VE S.p.A."
+},
+{
+"symbol": "MAIRE.MI",
+"name": "Maire S.p.A."
+},
+{
+"symbol": "MAPS.MI",
+"name": "Maps S.p.A."
+},
+{
+"symbol": "MARE.MI",
+"name": "Mare Group S.p.A."
+},
+{
+"symbol": "MARK.MI",
+"name": "Markbass S.p.A."
+},
+{
+"symbol": "MARP.MI",
+"name": "Marzocchi Pompe S.p.A."
+},
+{
+"symbol": "MARR.MI",
+"name": "MARR S.p.A."
+},
+{
+"symbol": "MASI.MI",
+"name": "Masi Agricola S.p.A."
+},
+{
+"symbol": "MB.MI",
+"name": "Mediobanca Banca di Credito Finanziario S.p.A."
+},
+{
+"symbol": "MET.MI",
+"name": "Met.Extra Group S.p.A."
+},
+{
+"symbol": "MEV.MI",
+"name": "Mevim S.p.A."
+},
+{
+"symbol": "MFEA.MI",
+"name": "MFE-Mediaforeurope N.V."
+},
+{
+"symbol": "MFEB.MI",
+"name": "MFE-Mediaforeurope N.V."
+},
+{
+"symbol": "MFT.MI",
+"name": "Matica Fintec S.p.A."
+},
+{
+"symbol": "MGS.MI",
+"name": "Magis S.p.A."
+},
+{
+"symbol": "MN.MI",
+"name": "Arnoldo Mondadori Editore S.p.A."
+},
+{
+"symbol": "MNL.MI",
+"name": "Monnalisa S.p.A."
+},
+{
+"symbol": "MOL.MI",
+"name": "Moltiply Group S.p.A."
+},
+{
+"symbol": "MONC.MI",
+"name": "Moncler S.p.A."
+},
+{
+"symbol": "MPT.MI",
+"name": "Impianti S.P.A."
+},
+{
+"symbol": "MS.MI",
+"name": "Misitano & Stracuzzi S.p.A."
+},
+{
+"symbol": "MTK.MI",
+"name": "Metriks AI S.p.A. Società Benefit"
+},
+{
+"symbol": "MTS.MI",
+"name": "MiT Sim S.p.A."
+},
+{
+"symbol": "MTV.MI",
+"name": "Mondo TV S.p.A."
+},
+{
+"symbol": "MTVFR.MI",
+"name": "Mondo TV France Société Anonyme"
+},
+{
+"symbol": "NDT.MI",
+"name": "Neodecortech S.p.A."
+},
+{
+"symbol": "NEXI.MI",
+"name": "Nexi S.p.A."
+},
+{
+"symbol": "NOVA.MI",
+"name": "Novamarine S.p.A."
+},
+{
+"symbol": "NPI.MI",
+"name": "Notorious Pictures S.p.A."
+},
+{
+"symbol": "NR.MI",
+"name": "Next Re SIIQ S.p.A."
+},
+{
+"symbol": "NRST.MI",
+"name": "Neurosoft Software Production S.A."
+},
+{
+"symbol": "NUS.MI",
+"name": "Nusco S.p.A."
+},
+{
+"symbol": "NWL.MI",
+"name": "NewPrinces S.p.A."
+},
+{
+"symbol": "NXT.MI",
+"name": "Next Geosolutions Europe SpA"
+},
+{
+"symbol": "OEC.MI",
+"name": "Ops eCom S.p.A."
+},
+{
+"symbol": "OLI.MI",
+"name": "Olidata S.p.A."
+},
+{
+"symbol": "OMER.MI",
+"name": "OMER S.p.A."
+},
+{
+"symbol": "ORS.MI",
+"name": "Orsero S.p.A."
+},
+{
+"symbol": "OS.MI",
+"name": "Officina Stellare S.p.A."
+},
+{
+"symbol": "OTO.MI",
+"name": "Otofarma S.P.A."
+},
+{
+"symbol": "OVS.MI",
+"name": "OVS S.p.A."
+},
+{
+"symbol": "PAG.MI",
+"name": "Porto Aviation Group S.p.A."
+},
+{
+"symbol": "PFI.MI",
+"name": "Premia Finance S.p.A."
+},
+{
+"symbol": "PHIL.MI",
+"name": "Philogen S.p.A."
+},
+{
+"symbol": "PHN.MI",
+"name": "Pharmanutra S.p.A."
+},
+{
+"symbol": "PIA.MI",
+"name": "Piaggio & C. SpA"
+},
+{
+"symbol": "PINF.MI",
+"name": "Pininfarina S.p.A."
+},
+{
+"symbol": "PIRC.MI",
+"name": "Pirelli & C. S.p.A."
+},
+{
+"symbol": "PLC.MI",
+"name": "PLC S.p.A."
+},
+{
+"symbol": "PLN.MI",
+"name": "Planetel S.p.A."
+},
+{
+"symbol": "PMED.MI",
+"name": "Piu' Medical"
+},
+{
+"symbol": "PMT.MI",
+"name": "Promotica S.p.A."
+},
+{
+"symbol": "POPR.MI",
+"name": "Poligrafici Printing S.p.A."
+},
+{
+"symbol": "POR.MI",
+"name": "Portobello S.p.A."
+},
+{
+"symbol": "POZ.MI",
+"name": "Pozzi Milano S.p.A."
+},
+{
+"symbol": "PQ.MI",
+"name": "Piquadro S.p.A."
+},
+{
+"symbol": "PRE.MI",
+"name": "Predict S.p.A."
+},
+{
+"symbol": "PRO.MI",
+"name": "Banca Profilo S.p.A."
+},
+{
+"symbol": "PRT.MI",
+"name": "Esprinet S.p.A."
+},
+{
+"symbol": "PRY.MI",
+"name": "Prysmian S.p.A."
+},
+{
+"symbol": "PSQ.MI",
+"name": "Pasquarelli Auto S.p.A."
+},
+{
+"symbol": "PST.MI",
+"name": "Poste Italiane S.p.A."
+},
+{
+"symbol": "PTR.MI",
+"name": "Pattern S.p.A."
+},
+{
+"symbol": "PWS.MI",
+"name": "Powersoft S.p.A."
+},
+{
+"symbol": "RACE.MI",
+"name": "Ferrari N.V."
+},
+{
+"symbol": "RAD.MI",
+"name": "Radici Pietro Industries & Brands S.p.A."
+},
+{
+"symbol": "RAT.MI",
+"name": "Ratti S.p.A."
+},
+{
+"symbol": "RCS.MI",
+"name": "RCS MediaGroup S.p.A."
+},
+{
+"symbol": "RDF.MI",
+"name": "Redelfi S.p.A."
+},
+{
+"symbol": "RDUE.MI",
+"name": "ErreDue S.p.A."
+},
+{
+"symbol": "REC.MI",
+"name": "Recordati Industria Chimica e Farmaceutica S.p.A."
+},
+{
+"symbol": "RES.MI",
+"name": "Recupero Etico Sostenibile S.p.A."
+},
+{
+"symbol": "RETI.MI",
+"name": "Reti S.p.A."
+},
+{
+"symbol": "REVO.MI",
+"name": "REVO Insurance S.p.A."
+},
+{
+"symbol": "REY.MI",
+"name": "Reply S.p.A."
+},
+{
+"symbol": "RFG.MI",
+"name": "Racing Force S.P.A."
+},
+{
+"symbol": "RFLTC.MI",
+"name": "RedFish LongTerm Capital S.p.A."
+},
+{
+"symbol": "RKT.MI",
+"name": "Rocket Sharing Company S.p.A."
+},
+{
+"symbol": "RMT.MI",
+"name": "Riba Mundo Tecnología S.A."
+},
+{
+"symbol": "RN.MI",
+"name": "Risanamento SpA"
+},
+{
+"symbol": "RNV.MI",
+"name": "Renovalo S.p.A."
+},
+{
+"symbol": "RPTN.MI",
+"name": "Rino Petino S.p.A."
+},
+{
+"symbol": "RTL.MI",
+"name": "RT&L S.p.A."
+},
+{
+"symbol": "RWAY.MI",
+"name": "Rai Way S.p.A."
+},
+{
+"symbol": "RWY.MI",
+"name": "Reway Group S.p.A."
+},
+{
+"symbol": "S3D.MI",
+"name": "Solid World Group S.p.A."
+},
+{
+"symbol": "SAB.MI",
+"name": "Sabaf S.p.A."
+},
+{
+"symbol": "SAC.MI",
+"name": "Saccheria F.lli Franceschetti S.p.A."
+},
+{
+"symbol": "SBC.MI",
+"name": "Sicily by Car S.p.A."
+},
+{
+"symbol": "SEIF.MI",
+"name": "Società Editoriale Il Fatto S.p.A."
+},
+{
+"symbol": "SERI.MI",
+"name": "Seri Industrial S.p.A."
+},
+{
+"symbol": "SES.MI",
+"name": "SeSa S.p.A."
+},
+{
+"symbol": "SFER.MI",
+"name": "Salvatore Ferragamo S.p.A."
+},
+{
+"symbol": "SFL.MI",
+"name": "Safilo Group S.p.A."
+},
+{
+"symbol": "SFT.MI",
+"name": "Softlab S.p.A."
+},
+{
+"symbol": "SGC.MI",
+"name": "SG Company S.p.A."
+},
+{
+"symbol": "SGF.MI",
+"name": "Sogefi S.p.A."
+},
+{
+"symbol": "SIAV.MI",
+"name": "Siav S.p.A."
+},
+{
+"symbol": "SIT.MI",
+"name": "SIT S.p.A."
+},
+{
+"symbol": "SL.MI",
+"name": "Sanlorenzo S.p.A."
+},
+{
+"symbol": "SMCAP.MI",
+"name": "Smart Capital S.p.A."
+},
+{
+"symbol": "SMN.MI",
+"name": "Simone S.p.A."
+},
+{
+"symbol": "SOL.MI",
+"name": "SOL S.p.A."
+},
+{
+"symbol": "SOM.MI",
+"name": "Somec S.p.A."
+},
+{
+"symbol": "SOS.MI",
+"name": "Sostravel.com S.p.A."
+},
+{
+"symbol": "SPM.MI",
+"name": "Saipem SpA"
+},
+{
+"symbol": "SRG.MI",
+"name": "Snam S.p.A."
+},
+{
+"symbol": "SSL.MI",
+"name": "S.S. Lazio S.p.A."
+},
+{
+"symbol": "STAR7.MI",
+"name": "Star7 S.p.A."
+},
+{
+"symbol": "STLAM.MI",
+"name": "Stellantis N.V."
+},
+{
+"symbol": "STMMI.MI",
+"name": "STMicroelectronics N.V."
+},
+{
+"symbol": "SVS.MI",
+"name": "Svas Biosana S.p.A."
+},
+{
+"symbol": "SYS.MI",
+"name": "SYS-DAT S.p.A."
+},
+{
+"symbol": "TB.MI",
+"name": "Triboo S.p.A."
+},
+{
+"symbol": "TCG.MI",
+"name": "Tecno S.p.a."
+},
+{
+"symbol": "TCM.MI",
+"name": "Tecma Solutions S.p.A."
+},
+{
+"symbol": "TEN.MI",
+"name": "Tenaris S.A."
+},
+{
+"symbol": "TES.MI",
+"name": "Tesmec S.p.A."
+},
+{
+"symbol": "TFIN.MI",
+"name": "TREVI - Finanziaria Industriale S.p.A."
+},
+{
+"symbol": "TGYM.MI",
+"name": "Technogym S.p.A."
+},
+{
+"symbol": "TIME.MI",
+"name": "Compagnia dei Caraibi S.p.A."
+},
+{
+"symbol": "TIP.MI",
+"name": "Tamburi Investment Partners S.p.A."
+},
+{
+"symbol": "TISG.MI",
+"name": "The Italian Sea Group S.p.A."
+},
+{
+"symbol": "TIT.MI",
+"name": "Telecom Italia S.p.A."
+},
+{
+"symbol": "TLM.MI",
+"name": "Techno Electrical Management Equipment Solutions S.p.A."
+},
+{
+"symbol": "TLS.MI",
+"name": "Telesia S.p.A."
+},
+{
+"symbol": "TMP.MI",
+"name": "TMP Group S.p.A."
+},
+{
+"symbol": "TNX.MI",
+"name": "Tenax International S.p.A."
+},
+{
+"symbol": "TNXT.MI",
+"name": "Tinexta S.p.A."
+},
+{
+"symbol": "TPRO.MI",
+"name": "Technoprobe S.p.A."
+},
+{
+"symbol": "TPS.MI",
+"name": "Technical Publications Service S.p.A."
+},
+{
+"symbol": "TRAI.MI",
+"name": "TradeLab S.p.A."
+},
+{
+"symbol": "TRN.MI",
+"name": "Terna S.p.A."
+},
+{
+"symbol": "TSL.MI",
+"name": "Tessellis S.p.A."
+},
+{
+"symbol": "TWL.MI",
+"name": "TraWell Co S.p.A."
+},
+{
+"symbol": "TXT.MI",
+"name": "TXT e-solutions S.p.A."
+},
+{
+"symbol": "TYA.MI",
+"name": "Toscana Aeroporti S.p.A."
+},
+{
+"symbol": "U24.MI",
+"name": "UCapital24 S.p.A."
+},
+{
+"symbol": "UBA.MI",
+"name": "UBALDI COSTRUZIONI"
+},
+{
+"symbol": "UCG.MI",
+"name": "UniCredit S.p.A."
+},
+{
+"symbol": "UD.MI",
+"name": "Unidata S.p.A."
+},
+{
+"symbol": "UNI.MI",
+"name": "Unipol Assicurazioni S.p.A."
+},
+{
+"symbol": "VARV.MI",
+"name": "Sbe - Varvit - Societa' Per Azioni"
+},
+{
+"symbol": "VIM.MI",
+"name": "Vimi Fasteners S.p.A."
+},
+{
+"symbol": "VLC.MI",
+"name": "Valica S.p.A."
+},
+{
+"symbol": "VLS.MI",
+"name": "Valsoia S.p.A."
+},
+{
+"symbol": "VLT.MI",
+"name": "Valtecne S.p.A."
+},
+{
+"symbol": "VNE.MI",
+"name": "VNE S.p.A."
+},
+{
+"symbol": "VNT.MI",
+"name": "Vantea SMART S.p.A."
+},
+{
+"symbol": "VNXT.MI",
+"name": "VINEXT"
+},
+{
+"symbol": "VVG.MI",
+"name": "VIVENDA GROUP"
+},
+{
+"symbol": "WBD.MI",
+"name": "Webuild S.p.A."
+},
+{
+"symbol": "WBDR.MI",
+"name": "Webuild S.p.A."
+},
+{
+"symbol": "WBS.MI",
+"name": "Websolute S.p.A."
+},
+{
+"symbol": "WIIT.MI",
+"name": "Wiit S.p.A."
+},
+{
+"symbol": "XHS.MI",
+"name": "Xenia Hôtellerie Solution S.p.A. Società Benefit"
+},
+{
+"symbol": "YACHT.MI",
+"name": "Ferretti S.p.A."
+},
+{
+"symbol": "YKY.MI",
+"name": "YAKKYO"
+},
+{
+"symbol": "YOLO.MI",
+"name": "Yolo Group S.p.A."
+},
+{
+"symbol": "YRM.MI",
+"name": "Rosetti Marino SpA"
+},
+{
+"symbol": "ZEST.MI",
+"name": "Zest S.p.A."
+},
+{
+"symbol": "ZUC.MI",
+"name": "Vincenzo Zucchi S.p.A."
+},
+{
+"symbol": "ZV.MI",
+"name": "Zignago Vetro S.p.A."
+}
+]
