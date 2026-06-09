@@ -12,7 +12,7 @@ export default function App() {
   const onOpen = (symbol) => setDetail(symbol)
 
   return (
-    <div className="min-h-screen bg-bg max-w-screen-sm mx-auto">
+    <div className="min-h-screen bg-bg max-w-screen-sm mx-auto pt-[env(safe-area-inset-top)]">
       {tab === 'list' && <ListPage onOpen={onOpen} />}
       {tab === 'watch' && <WatchlistPage onOpen={onOpen} />}
       {tab === 'compare' && <ComparePage onOpen={onOpen} />}

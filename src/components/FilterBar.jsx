@@ -12,7 +12,7 @@ const chip = 'h-8 px-3.5 rounded-xl text-[12.5px] font-semibold shrink-0 border'
 
 export default function FilterBar({ q, setQ, sort, setSort, onlyBelow, setOnlyBelow, minYield, setMinYield }) {
   return (
-    <div className="sticky top-0 z-20 bg-bg/95 backdrop-blur pt-2 pb-2 space-y-2.5">
+    <div className="sticky top-[env(safe-area-inset-top)] z-20 bg-bg/95 backdrop-blur pt-2 pb-2 space-y-2.5">
       <div className="flex items-center gap-2.5 h-11 px-3.5 rounded-2xl bg-surface border border-line text-muted">
         <Icon name="search" size={17} className="shrink-0" />
         <input
