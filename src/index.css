@@ -9,20 +9,25 @@
 html {
   height: 100%;
   background: #14161b; /* copre l'overscroll/canvas: niente cambio colore scrollando */
+  overflow-x: hidden; /* niente pan orizzontale della pagina su telefono */
 }
 
 #root {
   min-height: 100%;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   min-height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   background: #14161b;
   color: #eceef2;
   font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
-  overscroll-behavior-y: none;
+  overscroll-behavior: none; /* niente rimbalzo orizzontale/verticale */
   font-variant-numeric: tabular-nums; /* numeri allineati ovunque */
 }
 

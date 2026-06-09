@@ -18,7 +18,7 @@ export default function StockCard({ row, onOpen }) {
   return (
     <div
       onClick={() => onOpen(row.symbol)}
-      className="bg-surface rounded-2xl border border-line p-4 active:bg-surface2 transition-colors"
+      className="bg-surface rounded-2xl border border-line p-4 min-w-0 overflow-hidden active:bg-surface2 transition-colors"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">

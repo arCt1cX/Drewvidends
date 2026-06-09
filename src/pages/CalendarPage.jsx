@@ -57,7 +57,7 @@ export default function CalendarPage({ onOpen }) {
               <div className="text-xs font-semibold text-muted uppercase tracking-wide mb-1.5 capitalize">
                 {month}
               </div>
-              <div className="grid gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 {items.map((r) => {
                   const yieldDec = r.summary?.yield ?? r.yield ?? null
                   return (

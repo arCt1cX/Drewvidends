@@ -73,7 +73,7 @@ export default function WatchlistPage({ onOpen }) {
         {loadingSum && <span className="text-[11px] text-muted">analizzo…</span>}
       </header>
 
-      <div className="grid gap-3 pb-safe">
+      <div className="grid grid-cols-1 gap-3 pb-safe">
         {items.map(({ row, signals, sc }) => {
           const yieldDec = row.summary?.yield ?? row.yield ?? null
           const exDate = row.summary?.exDate ?? row.exDate ?? null

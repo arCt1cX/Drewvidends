@@ -80,7 +80,7 @@ export default function ListPage({ onOpen }) {
             <span>{filtered.length} titoli</span>
             {divProgress < 1 && <span>carico ex-date… {Math.round(divProgress * 100)}%</span>}
           </div>
-          <div className="grid gap-2.5 pb-safe">
+          <div className="grid grid-cols-1 gap-2.5 pb-safe">
             {filtered.map((r) => (
               <StockCard key={r.symbol} row={r} onOpen={onOpen} />
             ))}
