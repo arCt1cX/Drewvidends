@@ -6,6 +6,7 @@ import FilterBar from '../components/FilterBar.jsx'
 import StockCard from '../components/StockCard.jsx'
 import Spinner from '../components/Spinner.jsx'
 import Icon from '../components/Icon.jsx'
+import MarketBar from '../components/MarketBar.jsx'
 
 const POPULAR_MIN = 1e9 // capitalizzazione minima per "Popolari" (1 miliardo €): esclude micro-cap sconosciute
 
@@ -59,6 +60,8 @@ export default function ListPage({ onOpen }) {
           <Icon name="refresh" size={18} className={loading ? 'animate-spin' : ''} />
         </button>
       </header>
+
+      <MarketBar />
 
       <FilterBar
         q={q}

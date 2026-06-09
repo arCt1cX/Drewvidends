@@ -70,7 +70,7 @@ export function Store({ children }) {
       try {
         const [q, sp] = await Promise.all([api.quotes(['FTSEMIB.MI']), api.spark(['FTSEMIB.MI'])])
         if (!alive) return
-        setIndex({ changePct: q?.[0]?.changePct ?? null, spark: sp?.['FTSEMIB.MI'] ?? null })
+        setIndex({ ...(q?.[0] || {}), spark: sp?.['FTSEMIB.MI'] ?? null })
       } catch {
         /* ignora */
       }
