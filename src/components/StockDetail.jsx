@@ -7,10 +7,11 @@ import SignalBadges from './SignalBadges.jsx'
 import Spinner from './Spinner.jsx'
 import PriceChart from './PriceChart.jsx'
 import Averages from './Averages.jsx'
+import HealthCheck from './HealthCheck.jsx'
 import Icon from './Icon.jsx'
 
 export default function StockDetail({ symbol, onClose }) {
-  const { rows, summaries, loadSummary, isWatched, toggleWatch, notes, setNote } = useStore()
+  const { rows, summaries, loadSummary, isWatched, toggleWatch, notes, setNote, index } = useStore()
   const base = rows.find((r) => r.symbol === symbol) || { symbol, name: symbol }
   const [news, setNews] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -93,6 +94,9 @@ export default function StockDetail({ symbol, onClose }) {
           <PriceChart symbol={symbol} currency={row.currency} />
 
           {signals.length > 0 && <SignalBadges signals={signals} />}
+
+          {/* salute del titolo: rumore di mercato vs problema strutturale */}
+          <HealthCheck row={row} index={index} importantNews={importantNews} />
 
           {/* medie prezzo per periodo */}
           <div>

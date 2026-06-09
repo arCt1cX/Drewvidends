@@ -16,6 +16,7 @@ export function Store({ children }) {
 
   const [watch, setWatch] = useState(() => load('dv_watch', []))
   const [notes, setNotes] = useState(() => load('dv_notes', {}))
+  const [index, setIndex] = useState({ changePct: null, spark: null }) // FTSE MIB, per confronto col mercato
 
   const refresh = useCallback(async (fresh = false) => {
     setLoading(true)
@@ -56,6 +57,23 @@ export function Store({ children }) {
         setDivProgress(Math.min(1, (i + chunk) / all.length))
       }
       if (alive) setDivProgress(1)
+    })()
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  // Dati indice FTSE MIB (variazione oggi + serie 1 mese) per il confronto "vs mercato".
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      try {
+        const [q, sp] = await Promise.all([api.quotes(['FTSEMIB.MI']), api.spark(['FTSEMIB.MI'])])
+        if (!alive) return
+        setIndex({ changePct: q?.[0]?.changePct ?? null, spark: sp?.['FTSEMIB.MI'] ?? null })
+      } catch {
+        /* ignora */
+      }
     })()
     return () => {
       alive = false
@@ -134,6 +152,7 @@ export function Store({ children }) {
     rows,
     quotes,
     summaries,
+    index,
     loading,
     divProgress,
     error,
