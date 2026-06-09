@@ -7,11 +7,14 @@ import StockCard from '../components/StockCard.jsx'
 import Spinner from '../components/Spinner.jsx'
 import Icon from '../components/Icon.jsx'
 
+const POPULAR_MIN = 1e9 // capitalizzazione minima per "Popolari" (1 miliardo €): esclude micro-cap sconosciute
+
 export default function ListPage({ onOpen }) {
   const { rows, loading, error, refresh, divProgress } = useStore()
   const [q, setQ] = useState('')
   const [sort, setSort] = useState('yield')
   const [onlyBelow, setOnlyBelow] = useState(false)
+  const [onlyPopular, setOnlyPopular] = useState(false)
   const [minYield, setMinYield] = useState(0)
 
   const filtered = useMemo(() => {
@@ -20,6 +23,7 @@ export default function ListPage({ onOpen }) {
       if (term && !(`${r.name} ${r.symbol}`.toLowerCase().includes(term))) return false
       const yieldDec = r.summary?.yield ?? r.yield ?? null
       if (minYield && (yieldDec == null || yieldDec * 100 < minYield)) return false
+      if (onlyPopular && !(r.marketCap >= POPULAR_MIN)) return false // solo titoli noti (cap ≥ 1 mld)
       if (onlyBelow) {
         const g = belowAvg(r.price, r.ma200)
         if (g == null || g >= 0) return false
@@ -28,7 +32,7 @@ export default function ListPage({ onOpen }) {
     })
     list = list.slice().sort((a, b) => cmp(a, b, sort))
     return list
-  }, [rows, q, sort, onlyBelow, minYield])
+  }, [rows, q, sort, onlyBelow, onlyPopular, minYield])
 
   const occasioni = useMemo(
     () => rows.filter((r) => !r.missing && computeSignals(r).some((s) => s.level === 'buy')).length,
@@ -62,6 +66,8 @@ export default function ListPage({ onOpen }) {
         setSort={setSort}
         onlyBelow={onlyBelow}
         setOnlyBelow={setOnlyBelow}
+        onlyPopular={onlyPopular}
+        setOnlyPopular={setOnlyPopular}
         minYield={minYield}
         setMinYield={setMinYield}
       />
