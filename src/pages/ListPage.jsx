@@ -51,11 +51,12 @@ export default function ListPage({ onOpen }) {
           </div>
         </div>
         <button
-          onClick={refresh}
-          className="w-[38px] h-[38px] rounded-xl border border-line text-muted flex items-center justify-center"
+          onClick={() => refresh(true)}
+          disabled={loading}
+          className="w-[38px] h-[38px] rounded-xl border border-line text-muted flex items-center justify-center active:bg-surface2"
           aria-label="aggiorna"
         >
-          <Icon name="refresh" size={18} />
+          <Icon name="refresh" size={18} className={loading ? 'animate-spin' : ''} />
         </button>
       </header>
 

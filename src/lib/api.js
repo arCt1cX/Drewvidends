@@ -7,8 +7,13 @@ async function getJson(url) {
 }
 
 export const api = {
-  quotes: (symbols) =>
-    getJson('/api/quotes?symbols=' + encodeURIComponent(symbols.join(','))),
+  // fresh=true aggiunge un timestamp -> URL diverso -> salta cache edge + service worker
+  quotes: (symbols, fresh = false) =>
+    getJson(
+      '/api/quotes?symbols=' +
+        encodeURIComponent(symbols.join(',')) +
+        (fresh ? '&t=' + Date.now() : '')
+    ),
   divinfo: (symbols) =>
     getJson('/api/divinfo?symbols=' + encodeURIComponent(symbols.join(','))),
   spark: (symbols) =>

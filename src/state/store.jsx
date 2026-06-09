@@ -17,12 +17,12 @@ export function Store({ children }) {
   const [watch, setWatch] = useState(() => load('dv_watch', []))
   const [notes, setNotes] = useState(() => load('dv_notes', {}))
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (fresh = false) => {
     setLoading(true)
     setError(null)
     try {
       const list = universe.map((u) => u.symbol)
-      const data = await api.quotes(list)
+      const data = await api.quotes(list, fresh)
       const map = {}
       for (const q of data) map[q.symbol] = q
       setQuotes(map)
