@@ -80,12 +80,13 @@ export function Store({ children }) {
     }
   }, [])
 
-  // Carica in background le mini-serie prezzi (sparkline) di tutti i titoli, a blocchi.
+  // Carica in background le mini-serie prezzi (sparkline) di tutti i titoli,
+  // a blocchi di 40 (una chart per simbolo lato server: limite subrequest Workers).
   useEffect(() => {
     let alive = true
     ;(async () => {
       const all = universe.map((u) => u.symbol)
-      const chunk = 80
+      const chunk = 40
       for (let i = 0; i < all.length && alive; i += chunk) {
         try {
           const map = await api.spark(all.slice(i, i + chunk))

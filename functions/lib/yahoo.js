@@ -106,26 +106,23 @@ export async function fetchNews(symbol, count = 10) {
   return data?.news || []
 }
 
-// Mini-serie prezzi in blocco (endpoint "spark") per le sparkline delle card. 1 chiamata = molti titoli.
+// Mini-serie prezzi per le sparkline delle card. Yahoo ha dismesso l'endpoint batch
+// v7 "spark", quindi usiamo il chart v8 (lo stesso del grafico prezzi, niente crumb)
+// un simbolo alla volta, in parallelo. Max ~40 simboli per chiamata (limite subrequest).
 export async function fetchSpark(symbols, range = '1mo', interval = '1d') {
+  const results = await Promise.all(
+    symbols.map(async (sym) => {
+      try {
+        const c = await fetchChart(sym, range, interval)
+        const closes = (c?.indicators?.quote?.[0]?.close || []).filter((v) => v != null)
+        return [sym, closes.length >= 2 ? closes : null]
+      } catch {
+        return [sym, null]
+      }
+    })
+  )
   const out = {}
-  const chunkSize = 80
-  for (let i = 0; i < symbols.length; i += chunkSize) {
-    const chunk = symbols.slice(i, i + chunkSize)
-    const data = await authedJson(
-      (crumb) =>
-        'https://query1.finance.yahoo.com/v7/finance/spark?symbols=' +
-        encodeURIComponent(chunk.join(',')) +
-        `&range=${range}&interval=${interval}&crumb=` +
-        encodeURIComponent(crumb)
-    )
-    const arr = data?.spark?.result || []
-    for (const r of arr) {
-      const resp = r?.response?.[0]
-      const closes = (resp?.indicators?.quote?.[0]?.close || []).filter((c) => c != null)
-      if (closes.length >= 2) out[r.symbol] = closes
-    }
-  }
+  for (const [sym, closes] of results) if (closes) out[sym] = closes
   return out
 }
 
