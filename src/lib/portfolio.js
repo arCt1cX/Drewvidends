@@ -23,12 +23,14 @@ export function lastDividendPerShare(row) {
   return history[history.length - 1].amount ?? null
 }
 
-// Statistiche di una posizione (holding = { price, qty }). Il prezzo di carico è
-// obbligatorio; senza quantità restano solo le metriche per-azione (P/L %, yield on cost).
+// Statistiche di una posizione (holding = { price, invested }): prezzo di 1 azione
+// all'acquisto + euro totali investiti. Le azioni sono derivate (invested / price).
+// Senza "invested" restano solo le metriche per-azione (P/L %, yield on cost).
 export function positionStats(row, holding) {
   const buy = holding?.price
   if (!buy || buy <= 0) return null
-  const qty = holding?.qty > 0 ? holding.qty : null
+  const invested = holding?.invested > 0 ? holding.invested : null
+  const qty = invested ? invested / buy : null
 
   const plPct = row.price != null ? ((row.price - buy) / buy) * 100 : null
 
@@ -37,7 +39,6 @@ export function positionStats(row, holding) {
   const yoc = dps != null ? (dps / buy) * 100 : null
   const lastDps = lastDividendPerShare(row)
 
-  const invested = qty ? buy * qty : null
   const value = qty && row.price != null ? row.price * qty : null
   const pl = value != null ? value - invested : null
   const divGross = qty && dps != null ? dps * qty : null

@@ -204,9 +204,9 @@ function OwnedView({ owned, totals, onOpen }) {
         <p className="text-sm">
           Nessun titolo comprato.
           <br />
-          Apri un titolo e compila “Il mio acquisto”
+          Apri un titolo in watchlist e tocca la spunta
           <br />
-          con prezzo di carico e quantità.
+          accanto alla stella per segnarlo come comprato.
         </p>
       </div>
     )
@@ -278,7 +278,7 @@ function OwnedCard({ row, stats, days, onOpen }) {
           <div className="font-semibold text-sm truncate">{row.name}</div>
           <div className="text-[11px] text-muted">
             {row.symbol.replace('.MI', '')}
-            {stats?.qty ? ` · ${stats.qty} az` : ''}
+            {stats?.qty ? ` · ≈${Math.round(stats.qty)} az · ${fmtMoney(stats.invested)} investiti` : ''}
           </div>
         </div>
         <div className="text-right shrink-0">

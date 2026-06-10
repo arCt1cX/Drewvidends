@@ -16,7 +16,17 @@ export function Store({ children }) {
 
   const [watch, setWatch] = useState(() => load('dv_watch', []))
   const [notes, setNotes] = useState(() => load('dv_notes', {}))
-  const [portfolio, setPortfolio] = useState(() => load('dv_portfolio', {})) // symbol -> { price, qty } acquisti
+  // symbol -> { price: costo di 1 azione all'acquisto, invested: euro totali messi sul titolo }
+  const [portfolio, setPortfolio] = useState(() => {
+    const p = load('dv_portfolio', {})
+    // migrazione vecchio formato { price, qty } -> { price, invested }
+    for (const k of Object.keys(p)) {
+      if (p[k]?.qty != null && p[k].invested == null) {
+        p[k] = { price: p[k].price, invested: p[k].price != null ? p[k].price * p[k].qty : null }
+      }
+    }
+    return p
+  })
   const [index, setIndex] = useState({ changePct: null, spark: null }) // FTSE MIB, per confronto col mercato
 
   const refresh = useCallback(async (fresh = false) => {
