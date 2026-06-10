@@ -295,14 +295,14 @@ function HoldingEditor({ row, holding, onSave }) {
           <div className="grid grid-cols-2 gap-2.5">
             <Stat
               label="Guadagno / Perdita"
-              value={stats.pl != null ? fmtMoney(stats.pl, row.currency) : fmtPctNum(stats.plPct, 2)}
+              value={stats.pl != null ? fmtMoney(stats.pl, row.currency, 2) : fmtPctNum(stats.plPct, 2)}
               hint={stats.pl != null ? fmtPctNum(stats.plPct, 2) : 'inserisci il totale investito per il valore in €'}
               tone={stats.plPct == null ? undefined : stats.plPct >= 0 ? 'good' : 'bad'}
             />
             <Stat
               label="Dividendi annui netti (stima)"
-              value={stats.divNet != null ? fmtMoney(stats.divNet, row.currency) : '—'}
-              hint={stats.divGross != null ? `lordi ${fmtMoney(stats.divGross, row.currency)}` : 'serve il totale investito'}
+              value={stats.divNet != null ? fmtMoney(stats.divNet, row.currency, 2) : '—'}
+              hint={stats.divGross != null ? `lordi ${fmtMoney(stats.divGross, row.currency, 2)}` : 'serve il totale investito'}
             />
             <Stat
               label="Yield sul mio prezzo"
@@ -310,9 +310,9 @@ function HoldingEditor({ row, holding, onSave }) {
               hint={stats.yoc != null ? `netto ${fmtPctNum(stats.yoc * (1 - TAX), 2)}` : null}
             />
             <Stat
-              label="Prossima cedola netta (stima)"
-              value={stats.nextPayoutNet != null ? fmtMoney(stats.nextPayoutNet, row.currency) : '—'}
-              hint="in base all'ultimo stacco"
+              label="Prossimo dividendo netto (stima)"
+              value={stats.nextPayoutNet != null ? fmtMoney(stats.nextPayoutNet, row.currency, 2) : '—'}
+              hint="in base all'ultimo pagamento"
             />
           </div>
         </>

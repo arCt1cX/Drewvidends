@@ -79,12 +79,13 @@ export default function WatchlistPage({ onOpen }) {
 
   // totali portafoglio (solo posizioni con quantità)
   const totals = useMemo(() => {
-    const t = { invested: 0, value: 0, divNet: 0 }
+    const t = { invested: 0, value: 0, divNet: 0, divGross: 0 }
     for (const { stats } of owned) {
       if (!stats?.invested || stats.value == null) continue
       t.invested += stats.invested
       t.value += stats.value
       if (stats.divNet != null) t.divNet += stats.divNet
+      if (stats.divGross != null) t.divGross += stats.divGross
     }
     return t
   }, [owned])
@@ -223,23 +224,24 @@ function OwnedView({ owned, totals, onOpen }) {
           <div className="flex items-end justify-between gap-3">
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted">valore attuale</div>
-              <div className="text-2xl font-extrabold mt-0.5">{fmtMoney(totals.value)}</div>
+              <div className="text-2xl font-extrabold mt-0.5">{fmtMoney(totals.value, 'EUR', 2)}</div>
             </div>
             <div className={`text-right font-bold ${pl >= 0 ? 'text-pos' : 'text-danger'}`}>
               <div className="flex items-center justify-end gap-1 text-sm">
                 <Icon name={pl >= 0 ? 'triUp' : 'triDn'} size={12} />
-                {fmtMoney(Math.abs(pl))}
+                {fmtMoney(Math.abs(pl), 'EUR', 2)}
               </div>
               {plPct != null && <div className="text-[11px]">{fmtPctNum(plPct, 2)}</div>}
             </div>
           </div>
           <div className="mt-2.5 pt-2.5 border-t border-line flex items-center justify-between text-[11px] text-muted">
             <span>
-              investito <span className="text-ink font-semibold">{fmtMoney(totals.invested)}</span>
+              investito <span className="text-ink font-semibold">{fmtMoney(totals.invested, 'EUR', 2)}</span>
             </span>
-            <span>
-              dividendi netti/anno{' '}
-              <span className="text-accent font-semibold">{fmtMoney(totals.divNet)}</span>
+            <span className="text-right">
+              dividendi/anno{' '}
+              <span className="text-accent font-semibold">{fmtMoney(totals.divNet, 'EUR', 2)}</span> netti
+              <span className="block text-[10px]">{fmtMoney(totals.divGross, 'EUR', 2)} lordi</span>
             </span>
           </div>
         </div>
@@ -278,7 +280,7 @@ function OwnedCard({ row, stats, days, onOpen }) {
           <div className="font-semibold text-sm truncate">{row.name}</div>
           <div className="text-[11px] text-muted">
             {row.symbol.replace('.MI', '')}
-            {stats?.qty ? ` · ≈${fmtNum(stats.qty, 2)} az · ${fmtMoney(stats.invested)} investiti` : ''}
+            {stats?.qty ? ` · ≈${fmtNum(stats.qty, 2)} az · ${fmtMoney(stats.invested, 'EUR', 2)} investiti` : ''}
           </div>
         </div>
         <div className="text-right shrink-0">
@@ -300,12 +302,12 @@ function OwnedCard({ row, stats, days, onOpen }) {
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           <MiniStat
             label="guadagno"
-            value={stats.pl != null ? fmtMoney(stats.pl, row.currency) : '—'}
+            value={stats.pl != null ? fmtMoney(stats.pl, row.currency, 2) : '—'}
             tone={stats.pl == null ? undefined : stats.pl >= 0 ? 'pos' : 'neg'}
           />
           <MiniStat
             label="div. netti/anno"
-            value={stats.divNet != null ? fmtMoney(stats.divNet, row.currency) : '—'}
+            value={stats.divNet != null ? fmtMoney(stats.divNet, row.currency, 2) : '—'}
             tone="accent"
           />
           <MiniStat
@@ -327,7 +329,9 @@ function OwnedCard({ row, stats, days, onOpen }) {
             <span className="text-muted">paga il {fmtDate(row.paymentDate)}</span>
           )}
           {stats?.nextPayoutNet != null && (
-            <span className="text-accent">cedola ~{fmtMoney(stats.nextPayoutNet, row.currency)} netti</span>
+            <span className="text-accent">
+              prossimo div. ~{fmtMoney(stats.nextPayoutNet, row.currency, 2)} netti
+            </span>
           )}
         </div>
       )}
