@@ -48,6 +48,18 @@ export function positionStats(row, holding) {
   return { qty, plPct, yoc, invested, value, pl, divGross, divNet, nextPayoutNet }
 }
 
+// Dividendi NETTI maturati da una posizione per gli stacchi avvenuti dopo sinceEpoch.
+// Usato per sommare al capitale i dividendi incassati da quando è stato impostato.
+export function accruedNetSince(row, holding, sinceEpoch) {
+  const history = row.summary?.history
+  const buy = holding?.price
+  const qty = buy > 0 && holding?.invested > 0 ? holding.invested / buy : null
+  if (!history?.length || !qty || !sinceEpoch) return 0
+  const now = Date.now() / 1000
+  const gross = history.reduce((a, h) => (h.date > sinceEpoch && h.date <= now ? a + h.amount : a), 0)
+  return gross * qty * (1 - TAX)
+}
+
 // "12,50" / "12.50" -> 12.5 (input numerici con virgola italiana). null se non valido.
 export function parseDecimal(str) {
   if (typeof str !== 'string' || !str.trim()) return null

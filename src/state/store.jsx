@@ -16,7 +16,10 @@ export function Store({ children }) {
 
   const [watch, setWatch] = useState(() => load('dv_watch', []))
   const [notes, setNotes] = useState(() => load('dv_notes', {}))
-  // symbol -> { price: costo di 1 azione all'acquisto, invested: euro totali messi sul titolo }
+  // capitale impostato dall'utente: { start: €, setAt: epoch }. Da setAt in poi
+  // i dividendi staccati dai titoli comprati si sommano al capitale mostrato.
+  const [capital, setCapitalState] = useState(() => load('dv_capital', null))
+  // symbol -> { price: costo di 1 azione all'acquisto, invested: € totali, since: epoch spunta }
   const [portfolio, setPortfolio] = useState(() => {
     const p = load('dv_portfolio', {})
     // migrazione vecchio formato { price, qty } -> { price, invested }
@@ -116,6 +119,7 @@ export function Store({ children }) {
   useEffect(() => save('dv_watch', watch), [watch])
   useEffect(() => save('dv_notes', notes), [notes])
   useEffect(() => save('dv_portfolio', portfolio), [portfolio])
+  useEffect(() => save('dv_capital', capital), [capital])
 
   const loadSummary = useCallback(
     async (symbol) => {
@@ -138,9 +142,19 @@ export function Store({ children }) {
   const isWatched = useCallback((sym) => watch.includes(sym), [watch])
   const setNote = useCallback((sym, txt) => setNotes((n) => ({ ...n, [sym]: txt })), [])
 
-  // Acquisti: prezzo di carico + quantità per i "titoli comprati".
+  // Imposta (o azzera con null) il capitale: la data di set è la baseline dei dividendi.
+  const setCapital = useCallback((value) => {
+    setCapitalState(value != null ? { start: value, setAt: Math.floor(Date.now() / 1000) } : null)
+  }, [])
+
+  // Acquisti: dati della posizione per i "titoli comprati". Alla prima spunta
+  // registriamo "since": da lì contiamo gli stacchi dividendo del titolo.
   const setHolding = useCallback(
-    (sym, data) => setPortfolio((p) => ({ ...p, [sym]: { ...p[sym], ...data } })),
+    (sym, data) =>
+      setPortfolio((p) => ({
+        ...p,
+        [sym]: { since: Math.floor(Date.now() / 1000), ...p[sym], ...data }
+      })),
     []
   )
   const removeHolding = useCallback(
@@ -193,7 +207,9 @@ export function Store({ children }) {
     setNote,
     portfolio,
     setHolding,
-    removeHolding
+    removeHolding,
+    capital,
+    setCapital
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
