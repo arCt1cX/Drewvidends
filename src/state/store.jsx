@@ -16,6 +16,7 @@ export function Store({ children }) {
 
   const [watch, setWatch] = useState(() => load('dv_watch', []))
   const [notes, setNotes] = useState(() => load('dv_notes', {}))
+  const [portfolio, setPortfolio] = useState(() => load('dv_portfolio', {})) // symbol -> { price, qty } acquisti
   const [index, setIndex] = useState({ changePct: null, spark: null }) // FTSE MIB, per confronto col mercato
 
   const refresh = useCallback(async (fresh = false) => {
@@ -104,6 +105,7 @@ export function Store({ children }) {
 
   useEffect(() => save('dv_watch', watch), [watch])
   useEffect(() => save('dv_notes', notes), [notes])
+  useEffect(() => save('dv_portfolio', portfolio), [portfolio])
 
   const loadSummary = useCallback(
     async (symbol) => {
@@ -125,6 +127,21 @@ export function Store({ children }) {
   )
   const isWatched = useCallback((sym) => watch.includes(sym), [watch])
   const setNote = useCallback((sym, txt) => setNotes((n) => ({ ...n, [sym]: txt })), [])
+
+  // Acquisti: prezzo di carico + quantità per i "titoli comprati".
+  const setHolding = useCallback(
+    (sym, data) => setPortfolio((p) => ({ ...p, [sym]: { ...p[sym], ...data } })),
+    []
+  )
+  const removeHolding = useCallback(
+    (sym) =>
+      setPortfolio((p) => {
+        const next = { ...p }
+        delete next[sym]
+        return next
+      }),
+    []
+  )
 
   // righe = universo + quote + divinfo + summary. Campi dividendo presi dalla fonte migliore
   // disponibile: summary (dettaglio) > divinfo (blocco, ex-date forward) > quote (trailing).
@@ -163,7 +180,10 @@ export function Store({ children }) {
     toggleWatch,
     isWatched,
     notes,
-    setNote
+    setNote,
+    portfolio,
+    setHolding,
+    removeHolding
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { api } from '../lib/api.js'
 import { computeSignals, isImportantNews } from '../lib/signals.js'
-import { fmtPct, fmtPctNum, fmtMoney, netYield, belowAvg, daysUntil, fmtDate, fmtDays } from '../lib/format.js'
+import { fmtPct, fmtPctNum, fmtMoney, netYield, belowAvg, daysUntil, fmtDate, fmtDays, TAX } from '../lib/format.js'
+import { positionStats, parseDecimal } from '../lib/portfolio.js'
 import SignalBadges from './SignalBadges.jsx'
 import Spinner from './Spinner.jsx'
 import PriceChart from './PriceChart.jsx'
@@ -11,7 +12,8 @@ import HealthCheck from './HealthCheck.jsx'
 import Icon from './Icon.jsx'
 
 export default function StockDetail({ symbol, onClose }) {
-  const { rows, summaries, loadSummary, isWatched, toggleWatch, notes, setNote, index } = useStore()
+  const { rows, summaries, loadSummary, isWatched, toggleWatch, notes, setNote, index, portfolio, setHolding, removeHolding } =
+    useStore()
   const base = rows.find((r) => r.symbol === symbol) || { symbol, name: symbol }
   const [news, setNews] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -183,6 +185,18 @@ export default function StockDetail({ symbol, onClose }) {
             )}
           </div>
 
+          {/* il mio acquisto: prezzo di carico + quantità -> P/L e dividendi della posizione */}
+          <div>
+            <SectionTitle>Il mio acquisto</SectionTitle>
+            <HoldingEditor
+              key={symbol}
+              row={row}
+              holding={portfolio[symbol]}
+              onSave={(data) => setHolding(symbol, data)}
+              onRemove={() => removeHolding(symbol)}
+            />
+          </div>
+
           {/* note */}
           <div>
             <SectionTitle>Le mie note</SectionTitle>
@@ -211,6 +225,99 @@ function Stat({ label, value, hint, tone, big }) {
       <div className="text-[10px] uppercase tracking-wide text-muted leading-tight">{label}</div>
       <div className={`${big ? 'text-lg' : 'text-base'} font-bold mt-1 ${color}`}>{value}</div>
       {hint && <div className={`text-[10px] mt-0.5 ${tone ? color : 'text-muted'}`}>{hint}</div>}
+    </div>
+  )
+}
+
+// Editor prezzo di carico + quantità. Salva mentre scrivi (se il prezzo è valido)
+// e mostra subito P/L e dividendi stimati della posizione.
+function HoldingEditor({ row, holding, onSave, onRemove }) {
+  const fmtInput = (v) => (v != null ? String(v).replace('.', ',') : '')
+  const [price, setPrice] = useState(() => fmtInput(holding?.price))
+  const [qty, setQty] = useState(() => fmtInput(holding?.qty))
+  const stats = holding ? positionStats(row, holding) : null
+
+  const save = (priceStr, qtyStr) => {
+    const p = parseDecimal(priceStr)
+    if (p) onSave({ price: p, qty: parseDecimal(qtyStr) })
+  }
+
+  const inputCls =
+    'mt-1 w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-sm text-ink outline-none focus:border-accent'
+
+  return (
+    <div className="space-y-2.5">
+      <div className="grid grid-cols-2 gap-2.5">
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-wide text-muted">Prezzo di carico</span>
+          <input
+            value={price}
+            onChange={(e) => {
+              setPrice(e.target.value)
+              save(e.target.value, qty)
+            }}
+            inputMode="decimal"
+            placeholder="es. 12,50"
+            className={inputCls}
+          />
+        </label>
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-wide text-muted">Quantità (azioni)</span>
+          <input
+            value={qty}
+            onChange={(e) => {
+              setQty(e.target.value)
+              save(price, e.target.value)
+            }}
+            inputMode="decimal"
+            placeholder="es. 100"
+            className={inputCls}
+          />
+        </label>
+      </div>
+
+      {stats ? (
+        <>
+          <div className="grid grid-cols-2 gap-2.5">
+            <Stat
+              label="Guadagno / Perdita"
+              value={stats.pl != null ? fmtMoney(stats.pl, row.currency) : fmtPctNum(stats.plPct, 2)}
+              hint={stats.pl != null ? fmtPctNum(stats.plPct, 2) : 'inserisci la quantità per il valore in €'}
+              tone={stats.plPct == null ? undefined : stats.plPct >= 0 ? 'good' : 'bad'}
+            />
+            <Stat
+              label="Dividendi annui netti (stima)"
+              value={stats.divNet != null ? fmtMoney(stats.divNet, row.currency) : '—'}
+              hint={stats.divGross != null ? `lordi ${fmtMoney(stats.divGross, row.currency)}` : 'serve la quantità'}
+            />
+            <Stat
+              label="Yield sul mio prezzo"
+              value={stats.yoc != null ? fmtPctNum(stats.yoc, 2) : '—'}
+              hint={stats.yoc != null ? `netto ${fmtPctNum(stats.yoc * (1 - TAX), 2)}` : null}
+            />
+            <Stat
+              label="Prossima cedola netta (stima)"
+              value={stats.nextPayoutNet != null ? fmtMoney(stats.nextPayoutNet, row.currency) : '—'}
+              hint="in base all'ultimo stacco"
+            />
+          </div>
+          <button
+            onClick={() => {
+              onRemove()
+              setPrice('')
+              setQty('')
+            }}
+            className="text-[11px] font-semibold text-muted underline underline-offset-2"
+          >
+            Rimuovi dai comprati
+          </button>
+        </>
+      ) : (
+        <p className="text-xs text-muted leading-snug">
+          Scrivi a quanto l’hai comprato (e quante azioni): lo ritrovi nella tab Watchlist → Comprati con
+          guadagno e dividendi stimati.
+        </p>
+      )}
     </div>
   )
 }
