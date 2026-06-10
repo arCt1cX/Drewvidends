@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { api } from '../lib/api.js'
 import { computeSignals, score, isImportantNews } from '../lib/signals.js'
-import { fmtPct, fmtPctNum, fmtMoney, daysUntil, fmtDays, fmtDate } from '../lib/format.js'
+import { fmtPct, fmtPctNum, fmtMoney, fmtNum, daysUntil, fmtDays, fmtDate } from '../lib/format.js'
 import { positionStats } from '../lib/portfolio.js'
 import SignalBadges from '../components/SignalBadges.jsx'
 import Icon from '../components/Icon.jsx'
@@ -278,7 +278,7 @@ function OwnedCard({ row, stats, days, onOpen }) {
           <div className="font-semibold text-sm truncate">{row.name}</div>
           <div className="text-[11px] text-muted">
             {row.symbol.replace('.MI', '')}
-            {stats?.qty ? ` · ≈${Math.round(stats.qty)} az · ${fmtMoney(stats.invested)} investiti` : ''}
+            {stats?.qty ? ` · ≈${fmtNum(stats.qty, 2)} az · ${fmtMoney(stats.invested)} investiti` : ''}
           </div>
         </div>
         <div className="text-right shrink-0">

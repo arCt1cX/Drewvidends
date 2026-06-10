@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { api } from '../lib/api.js'
 import { computeSignals, isImportantNews } from '../lib/signals.js'
-import { fmtPct, fmtPctNum, fmtMoney, netYield, belowAvg, daysUntil, fmtDate, fmtDays, TAX } from '../lib/format.js'
+import { fmtPct, fmtPctNum, fmtMoney, fmtNum, netYield, belowAvg, daysUntil, fmtDate, fmtDays, TAX } from '../lib/format.js'
 import { positionStats, parseDecimal } from '../lib/portfolio.js'
 import SignalBadges from './SignalBadges.jsx'
 import Spinner from './Spinner.jsx'
@@ -288,7 +288,7 @@ function HoldingEditor({ row, holding, onSave }) {
         <>
           {stats.qty != null && (
             <p className="text-[11px] text-muted">
-              ≈ <span className="text-ink font-semibold">{Math.round(stats.qty)}</span> azioni a{' '}
+              ≈ <span className="text-ink font-semibold">{fmtNum(stats.qty, 2)}</span> azioni a{' '}
               {fmtMoney(holding.price, row.currency)}
             </p>
           )}
