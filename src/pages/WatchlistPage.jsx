@@ -3,12 +3,12 @@ import { useStore } from '../state/store.jsx'
 import { api } from '../lib/api.js'
 import { computeSignals, score, isImportantNews } from '../lib/signals.js'
 import { fmtPct, fmtPctNum, fmtMoney, fmtNum, daysUntil, fmtDays, fmtDate } from '../lib/format.js'
-import { positionStats, accruedNetSince, parseDecimal } from '../lib/portfolio.js'
+import { positionStats, accruedNetSince } from '../lib/portfolio.js'
 import SignalBadges from '../components/SignalBadges.jsx'
 import Icon from '../components/Icon.jsx'
 
 export default function WatchlistPage({ onOpen }) {
-  const { rows, watch, loadSummary, summaries, portfolio, capital, setCapital } = useStore()
+  const { rows, watch, loadSummary, summaries, portfolio } = useStore()
   const [view, setView] = useState('watch') // 'watch' | 'owned'
   const [news, setNews] = useState({}) // symbol -> [{title,link}]
   const [loadingSum, setLoadingSum] = useState(false)
@@ -91,16 +91,16 @@ export default function WatchlistPage({ onOpen }) {
     return t
   }, [owned])
 
-  // dividendi netti maturati dagli stacchi avvenuti DOPO l'impostazione del capitale
-  // (e dopo la spunta "comprato" di ogni titolo)
-  const accrued = useMemo(() => {
-    if (!capital) return 0
-    return owned.reduce(
-      (a, { row, holding }) =>
-        a + accruedNetSince(row, holding, Math.max(capital.setAt, holding?.since || 0)),
-      0
-    )
-  }, [owned, capital])
+  // dividendi netti guadagnati: stacchi avvenuti da quando ogni titolo ha la spunta "comprato"
+  const earned = useMemo(
+    () =>
+      owned.reduce(
+        (a, { row, holding }) =>
+          holding?.since ? a + accruedNetSince(row, holding, holding.since) : a,
+        0
+      ),
+    [owned]
+  )
 
   return (
     <div className="px-4">
@@ -133,14 +133,7 @@ export default function WatchlistPage({ onOpen }) {
       {view === 'watch' ? (
         <WatchView items={items} news={news} onOpen={onOpen} empty={!watch.length} />
       ) : (
-        <OwnedView
-          owned={owned}
-          totals={totals}
-          capital={capital}
-          accrued={accrued}
-          setCapital={setCapital}
-          onOpen={onOpen}
-        />
+        <OwnedView owned={owned} totals={totals} earned={earned} onOpen={onOpen} />
       )}
     </div>
   )
@@ -216,7 +209,7 @@ function WatchView({ items, news, onOpen, empty }) {
   )
 }
 
-function OwnedView({ owned, totals, capital, accrued, setCapital, onOpen }) {
+function OwnedView({ owned, totals, earned, onOpen }) {
   if (!owned.length) {
     return (
       <div className="pt-14 text-center text-muted">
@@ -238,110 +231,41 @@ function OwnedView({ owned, totals, capital, accrued, setCapital, onOpen }) {
   return (
     <div className="grid grid-cols-1 gap-3 pb-safe">
       {/* riepilogo portafoglio */}
-      <div className="bg-surface rounded-2xl border border-line p-3.5">
-        {totals.invested > 0 && (
-          <>
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-muted">valore attuale</div>
-                <div className="text-2xl font-extrabold mt-0.5">{fmtMoney(totals.value, 'EUR', 2)}</div>
-              </div>
-              <div className={`text-right font-bold ${pl >= 0 ? 'text-pos' : 'text-danger'}`}>
-                <div className="flex items-center justify-end gap-1 text-sm">
-                  <Icon name={pl >= 0 ? 'triUp' : 'triDn'} size={12} />
-                  {fmtMoney(Math.abs(pl), 'EUR', 2)}
-                </div>
-                {plPct != null && <div className="text-[11px]">{fmtPctNum(plPct, 2)}</div>}
-              </div>
+      {totals.invested > 0 && (
+        <div className="bg-surface rounded-2xl border border-line p-3.5">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted">valore attuale</div>
+              <div className="text-2xl font-extrabold mt-0.5">{fmtMoney(totals.value, 'EUR', 2)}</div>
             </div>
-            <div className="mt-2.5 pt-2.5 border-t border-line flex items-center justify-between text-[11px] text-muted">
-              <span>
-                investito <span className="text-ink font-semibold">{fmtMoney(totals.invested, 'EUR', 2)}</span>
-              </span>
-              <span className="text-right">
-                dividendi/anno{' '}
-                <span className="text-accent font-semibold">{fmtMoney(totals.divNet, 'EUR', 2)}</span> netti
-                <span className="block text-[10px]">{fmtMoney(totals.divGross, 'EUR', 2)} lordi</span>
-              </span>
+            <div className={`text-right font-bold ${pl >= 0 ? 'text-pos' : 'text-danger'}`}>
+              <div className="flex items-center justify-end gap-1 text-sm">
+                <Icon name={pl >= 0 ? 'triUp' : 'triDn'} size={12} />
+                {fmtMoney(Math.abs(pl), 'EUR', 2)}
+              </div>
+              {plPct != null && <div className="text-[11px]">{fmtPctNum(plPct, 2)}</div>}
             </div>
-          </>
-        )}
-
-        {/* capitale: lo imposti una volta, i dividendi staccati si sommano da soli */}
-        <div className={totals.invested > 0 ? 'mt-2.5 pt-2.5 border-t border-line' : ''}>
-          <CapitalRow capital={capital} accrued={accrued} onSave={setCapital} />
+          </div>
+          <div className="mt-2.5 pt-2.5 border-t border-line flex items-start justify-between text-[11px] text-muted">
+            <span>
+              investito <span className="text-ink font-semibold">{fmtMoney(totals.invested, 'EUR', 2)}</span>
+              <span className="block text-[10px]">
+                dividendi guadagnati{' '}
+                <span className="text-accent font-semibold">{fmtMoney(earned, 'EUR', 2)}</span> netti
+              </span>
+            </span>
+            <span className="text-right">
+              dividendi/anno{' '}
+              <span className="text-accent font-semibold">{fmtMoney(totals.divNet, 'EUR', 2)}</span> netti
+              <span className="block text-[10px]">{fmtMoney(totals.divGross, 'EUR', 2)} lordi</span>
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {owned.map(({ row, stats, days }) => (
         <OwnedCard key={row.symbol} row={row} stats={stats} days={days} onOpen={onOpen} />
       ))}
-    </div>
-  )
-}
-
-// Capitale: numero impostato dall'utente + dividendi netti maturati da allora.
-// Tocca la riga per modificarlo (rimettendolo si riparte a contare da oggi).
-function CapitalRow({ capital, accrued, onSave }) {
-  const [editing, setEditing] = useState(false)
-  const [val, setVal] = useState('')
-
-  if (editing) {
-    return (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          onSave(parseDecimal(val))
-          setEditing(false)
-        }}
-        className="flex items-center gap-2"
-      >
-        <input
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          inputMode="decimal"
-          placeholder="es. 6000"
-          autoFocus
-          className="flex-1 min-w-0 bg-surface2 border border-line rounded-lg px-2.5 py-1.5 text-sm text-ink outline-none focus:border-accent"
-        />
-        <button type="submit" className="text-xs font-bold text-accent shrink-0">
-          OK
-        </button>
-      </form>
-    )
-  }
-
-  if (!capital) {
-    return (
-      <button onClick={() => setEditing(true)} className="text-[11px] font-semibold text-accent">
-        + Imposta il capitale: da lì in poi i dividendi che incassi si sommano da soli
-      </button>
-    )
-  }
-
-  const current = capital.start + accrued
-  return (
-    <div
-      onClick={() => {
-        setVal(String(capital.start).replace('.', ','))
-        setEditing(true)
-      }}
-      className="flex items-center justify-between gap-3 text-[11px] text-muted"
-    >
-      <span>
-        capitale{' '}
-        <span className="text-ink font-semibold text-sm">{fmtMoney(current, 'EUR', 2)}</span>
-      </span>
-      <span className="text-right">
-        {accrued > 0 ? (
-          <span className="text-accent font-semibold">
-            +{fmtMoney(accrued, 'EUR', 2)} di dividendi
-          </span>
-        ) : (
-          'i dividendi si sommeranno qui'
-        )}
-        <span className="block text-[10px]">dal {fmtDate(capital.setAt)} · tocca per modificare</span>
-      </span>
     </div>
   )
 }
