@@ -334,7 +334,9 @@ function HoldingEditor({ row, holding, onSave }) {
   )
 }
 
-// Tasto vendi: incassa valore attuale + dividendi maturati nel capitale, rimuove la posizione.
+// Tasto vendi: l'incasso (valore attuale) libera liquidità in «da investire» e il
+// guadagno diventa realizzato. I dividendi NON si riaggiungono: erano già nel capitale,
+// vengono solo trasferiti dal conteggio live a quello fisso quando la posizione sparisce.
 function SellButton({ row, holding, onSell }) {
   const stats = positionStats(row, holding)
   const proceeds = stats?.value ?? null
@@ -344,10 +346,10 @@ function SellButton({ row, holding, onSell }) {
   const handle = () => {
     const msg =
       proceeds != null
-        ? `Vendere ${row.name}?\n\nIncassi ≈ ${fmtMoney(proceeds, row.currency, 2)} ` +
-          `(${gain >= 0 ? 'guadagno' : 'perdita'} ${fmtMoney(Math.abs(gain), row.currency, 2)}` +
-          `${dividends > 0 ? ` + ${fmtMoney(dividends, row.currency, 2)} dividendi` : ''}).\n` +
-          `Vengono aggiunti al capitale e la posizione viene rimossa.`
+        ? `Vendere ${row.name}?\n\n` +
+          `Incasso della vendita ≈ ${fmtMoney(proceeds, row.currency, 2)}: va in «da investire».\n` +
+          `${gain >= 0 ? 'Guadagno' : 'Perdita'} realizzato: ${fmtMoney(Math.abs(gain), row.currency, 2)}.\n` +
+          `I dividendi erano già contati nel capitale. La posizione viene rimossa.`
         : `Vendere ${row.name}? La posizione viene rimossa.`
     if (window.confirm(msg)) onSell({ gain, dividends })
   }
