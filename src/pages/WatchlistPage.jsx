@@ -8,7 +8,7 @@ import SignalBadges from '../components/SignalBadges.jsx'
 import Icon from '../components/Icon.jsx'
 
 export default function WatchlistPage({ onOpen }) {
-  const { rows, watch, loadSummary, summaries, portfolio, capital, realized, setCapital } = useStore()
+  const { rows, watch, loadSummary, summaries, portfolio, capital, realized, realizedDiv, setCapital } = useStore()
   const [view, setView] = useState('watch') // 'watch' | 'owned'
   const [news, setNews] = useState({}) // symbol -> [{title,link}]
   const [loadingSum, setLoadingSum] = useState(false)
@@ -139,6 +139,7 @@ export default function WatchlistPage({ onOpen }) {
           earned={earned}
           capital={capital}
           realized={realized}
+          realizedDiv={realizedDiv}
           setCapital={setCapital}
           onOpen={onOpen}
         />
@@ -217,7 +218,7 @@ function WatchView({ items, news, onOpen, empty }) {
   )
 }
 
-function OwnedView({ owned, totals, earned, capital, realized, setCapital, onOpen }) {
+function OwnedView({ owned, totals, earned, capital, realized, realizedDiv, setCapital, onOpen }) {
   if (!owned.length) {
     return (
       <div className="pt-14 text-center text-muted">
@@ -233,9 +234,11 @@ function OwnedView({ owned, totals, earned, capital, realized, setCapital, onOpe
     )
   }
 
-  // capitale totale = quanto immesso + dividendi incassati (entrano nel capitale reale).
+  // dividendi totali incassati = quelli dei titoli ancora aperti + quelli dei titoli venduti.
+  // capitale totale = immesso + guadagno realizzato + dividendi totali (entrano nel capitale reale).
   // da investire = capitale ancora libero (non dentro i titoli posseduti).
-  const capitale = (capital || 0) + earned
+  const dividendiIncassati = earned + (realizedDiv || 0)
+  const capitale = (capital || 0) + (realized || 0) + dividendiIncassati
   const daInvestire = capitale - totals.invested
   const plOpen = totals.value - totals.invested // plus/minus non realizzata sui titoli aperti
 
@@ -245,7 +248,7 @@ function OwnedView({ owned, totals, earned, capital, realized, setCapital, onOpe
       <div className="bg-surface rounded-2xl border border-line p-3.5">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted">capitale</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted">capitale totale</div>
             <div className="text-2xl font-extrabold mt-0.5">{fmtMoney(capitale, 'EUR', 2)}</div>
           </div>
           <div className="text-right">
@@ -272,16 +275,16 @@ function OwnedView({ owned, totals, earned, capital, realized, setCapital, onOpe
               {fmtMoney(Math.abs(plOpen), 'EUR', 2)}
             </span>
           </span>
-          <span className={`text-right ${realized >= 0 ? 'text-pos' : 'text-danger'}`}>
+          <span className={`text-right ${(realized || 0) >= 0 ? 'text-pos' : 'text-danger'}`}>
             realizzato{' '}
             <span className="font-semibold">
-              {realized >= 0 ? '+' : '−'}
+              {(realized || 0) >= 0 ? '+' : '−'}
               {fmtMoney(Math.abs(realized || 0), 'EUR', 2)}
             </span>
           </span>
           <span>
             dividendi incassati{' '}
-            <span className="text-accent font-semibold">{fmtMoney(earned, 'EUR', 2)}</span> netti
+            <span className="text-accent font-semibold">{fmtMoney(dividendiIncassati, 'EUR', 2)}</span> netti
           </span>
           <span className="text-right">
             dividendi/anno{' '}
@@ -382,14 +385,22 @@ function OwnedCard({ row, stats, days, onOpen }) {
   )
 }
 
-// Campo per immettere il capitale totale di partenza. Salva mentre scrivi.
+// Campo per immettere il capitale di partenza (resta fisso, lo cambi solo tu). Salva mentre scrivi.
+// Si risincronizza col valore salvato quando non lo stai modificando (es. dopo la migrazione).
 function CapitalInput({ capital, setCapital }) {
-  const [val, setVal] = useState(() => (capital ? String(capital).replace('.', ',') : ''))
+  const fmt = (c) => (c ? String(c).replace('.', ',') : '')
+  const [val, setVal] = useState(() => fmt(capital))
+  const [editing, setEditing] = useState(false)
+  useEffect(() => {
+    if (!editing) setVal(fmt(capital))
+  }, [capital, editing])
   return (
     <label className="block mt-2.5">
       <span className="text-[10px] uppercase tracking-wide text-muted">Capitale immesso (€)</span>
       <input
         value={val}
+        onFocus={() => setEditing(true)}
+        onBlur={() => setEditing(false)}
         onChange={(e) => {
           setVal(e.target.value)
           const n = parseDecimal(e.target.value)

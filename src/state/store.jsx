@@ -5,6 +5,9 @@ import { load, save } from '../lib/storage.js'
 
 const Ctx = createContext(null)
 
+// arrotonda agli euro-centesimi: evita code di decimali da virgola mobile (es. 206,872586…)
+const round2 = (n) => Math.round(((Number(n) || 0) + Number.EPSILON) * 100) / 100
+
 export function Store({ children }) {
   const [quotes, setQuotes] = useState({}) // symbol -> quote
   const [spark, setSpark] = useState({}) // symbol -> [close...] per sparkline
@@ -30,10 +33,22 @@ export function Store({ children }) {
     return p
   })
   const [index, setIndex] = useState({ changePct: null, spark: null }) // FTSE MIB, per confronto col mercato
-  // capitale = denaro totale immesso dall'utente; cresce coi dividendi incassati e col
-  // guadagno realizzato alla vendita. realized = totale plus/minusvalenze già incassate.
+  // capital = SOLO il capitale immesso a mano dall'utente (resta fisso, non lo tocca la vendita).
+  // realized = plus/minusvalenze già realizzate con le vendite.
+  // realizedDiv = dividendi netti dei titoli ormai venduti (così restano contati dopo la vendita).
+  // Il "capitale totale" mostrato = capital + realized + realizedDiv + dividendi dei titoli aperti.
   const [capital, setCapitalState] = useState(() => load('dv_capital', 0))
   const [realized, setRealized] = useState(() => load('dv_realized', 0))
+  const [realizedDiv, setRealizedDiv] = useState(() => load('dv_realized_div', 0))
+
+  // Migrazione v0->v1: prima la vendita sommava il guadagno realizzato anche al capitale
+  // immesso (corrompendolo). Lo scorporiamo una volta sola così il campo torna corretto.
+  useEffect(() => {
+    if (load('dv_capital_v', 0) < 1) {
+      setCapitalState((c) => round2(Math.max(0, (c || 0) - (load('dv_realized', 0) || 0))))
+      save('dv_capital_v', 1)
+    }
+  }, [])
 
   const refresh = useCallback(async (fresh = false) => {
     setLoading(true)
@@ -126,6 +141,7 @@ export function Store({ children }) {
   useEffect(() => save('dv_portfolio', portfolio), [portfolio])
   useEffect(() => save('dv_capital', capital), [capital])
   useEffect(() => save('dv_realized', realized), [realized])
+  useEffect(() => save('dv_realized_div', realizedDiv), [realizedDiv])
 
   const loadSummary = useCallback(
     async (symbol) => {
@@ -168,13 +184,14 @@ export function Store({ children }) {
     []
   )
 
-  const setCapital = useCallback((v) => setCapitalState(v != null && v >= 0 ? v : 0), [])
+  const setCapital = useCallback((v) => setCapitalState(v != null && v >= 0 ? round2(v) : 0), [])
 
-  // Vendita di una posizione: incassa il guadagno realizzato (gain = valore attuale - investito)
-  // e i dividendi netti maturati, li somma al capitale, aggiorna il realizzato, rimuove la posizione.
+  // Vendita di una posizione: registra il guadagno realizzato (gain = valore attuale - investito)
+  // e blocca i dividendi netti maturati (che non saranno più calcolabili dai titoli aperti).
+  // NON tocca il capitale immesso: il "capitale totale" li somma comunque in fase di calcolo.
   const sellHolding = useCallback((sym, { gain = 0, dividends = 0 } = {}) => {
-    setCapitalState((c) => (c || 0) + gain + dividends)
-    setRealized((r) => (r || 0) + gain)
+    setRealized((r) => round2((r || 0) + gain))
+    setRealizedDiv((d) => round2((d || 0) + dividends))
     removeHolding(sym)
   }, [removeHolding])
 
@@ -221,6 +238,7 @@ export function Store({ children }) {
     removeHolding,
     capital,
     realized,
+    realizedDiv,
     setCapital,
     sellHolding
   }
