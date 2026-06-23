@@ -126,22 +126,55 @@ export async function fetchSpark(symbols, range = '1mo', interval = '1d') {
   return out
 }
 
-// quoteSummary "leggera" per dati dividendo in blocco (niente chart): usata da /api/divinfo.
+// Scarta una ex-date "forward" implausibile.
+// Dopo lo stacco Yahoo a volte rimette in exDividendDate una STIMA ingenua
+// (ultimo stacco + ~1 mese): sbagliata per chi paga ogni 6/12 mesi. Es. Poste
+// Italiane (stacco saldo a giugno, acconto a novembre) finiva col mostrare una
+// finta cedola "a luglio". Con lo storico verifichiamo che la prossima ex-date
+// cada DOPO l'ultimo stacco e ad almeno ~metà dell'intervallo tipico tra cedole.
+// history: array di { date } (epoch sec) degli stacchi passati. Senza dati
+// sufficienti per giudicare, ci si fida del valore Yahoo.
+export function sanitizeExDate(exDate, history) {
+  if (!exDate) return null
+  const dates = (Array.isArray(history) ? history : [])
+    .map((h) => h?.date)
+    .filter((d) => d != null)
+    .sort((a, b) => a - b)
+  if (dates.length < 2) return exDate
+  const last = dates[dates.length - 1]
+  if (exDate <= last) return null // una "prossima" deve cadere dopo l'ultimo stacco noto
+  const gaps = []
+  for (let i = 1; i < dates.length; i++) gaps.push(dates[i] - dates[i - 1])
+  gaps.sort((a, b) => a - b)
+  const median = gaps[Math.floor(gaps.length / 2)]
+  if (exDate - last < median * 0.5) return null // troppo vicino: stima fasulla "+1 mese"
+  return exDate
+}
+
+// quoteSummary per dati dividendo in blocco: usata da /api/divinfo. Affianca una
+// chart leggera (solo eventi dividendo) per validare la ex-date forward con lo storico.
 export async function fetchDivInfo(symbol) {
-  const data = await authedJson(
-    (crumb) =>
-      'https://query2.finance.yahoo.com/v10/finance/quoteSummary/' +
-      encodeURIComponent(symbol) +
-      '?modules=summaryDetail,calendarEvents&crumb=' +
-      encodeURIComponent(crumb)
-  )
+  const [data, chart] = await Promise.all([
+    authedJson(
+      (crumb) =>
+        'https://query2.finance.yahoo.com/v10/finance/quoteSummary/' +
+        encodeURIComponent(symbol) +
+        '?modules=summaryDetail,calendarEvents&crumb=' +
+        encodeURIComponent(crumb)
+    ),
+    fetchChart(symbol, '3y', '1mo')
+  ])
   const r = data?.quoteSummary?.result?.[0]
   if (!r) return null
   const sd = r.summaryDetail || {}
   const ce = r.calendarEvents || {}
+  const history = (chart?.events?.dividends ? Object.values(chart.events.dividends) : [])
+    .map((d) => ({ date: d.date }))
+    .sort((a, b) => a.date - b.date)
+  const rawEx = sd.exDividendDate?.raw ?? ce?.dividend?.exDate?.raw ?? null
   return {
     yield: sd.dividendYield?.raw ?? null,
-    exDate: sd.exDividendDate?.raw ?? ce?.dividend?.exDate?.raw ?? null,
+    exDate: sanitizeExDate(rawEx, history),
     payoutRatio: sd.payoutRatio?.raw ?? null,
     fiveYearAvgYield: sd.fiveYearAvgDividendYield?.raw ?? null,
     paymentDate: ce?.dividendDate?.raw ?? null

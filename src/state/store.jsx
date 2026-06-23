@@ -51,13 +51,15 @@ export function Store({ children }) {
     refresh()
   }, [refresh])
 
-  // Carica in background le ex-date forward (+ payout, yield medio) di TUTTI i titoli,
-  // a blocchi di 40 (limite subrequest Workers). Senza questo, ex-date/calendario sbagliati.
+  // Carica in background le ex-date forward (+ payout, yield medio) di TUTTI i titoli.
+  // Blocchi di 20: ogni simbolo fa 2 subrequest lato server (quoteSummary + chart per
+  // validare la ex-date), quindi 20 simboli = ~40 subrequest (limite Workers).
+  // Senza questo, ex-date/calendario sbagliati.
   useEffect(() => {
     let alive = true
     ;(async () => {
       const all = universe.map((u) => u.symbol)
-      const chunk = 40
+      const chunk = 20
       for (let i = 0; i < all.length && alive; i += chunk) {
         const part = all.slice(i, i + chunk)
         try {
