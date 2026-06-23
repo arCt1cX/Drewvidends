@@ -3,12 +3,12 @@ import { useStore } from '../state/store.jsx'
 import { api } from '../lib/api.js'
 import { computeSignals, score, isImportantNews } from '../lib/signals.js'
 import { fmtPct, fmtPctNum, fmtMoney, fmtNum, daysUntil, fmtDays, fmtDate } from '../lib/format.js'
-import { positionStats, accruedNetSince } from '../lib/portfolio.js'
+import { positionStats, accruedNetSince, parseDecimal } from '../lib/portfolio.js'
 import SignalBadges from '../components/SignalBadges.jsx'
 import Icon from '../components/Icon.jsx'
 
 export default function WatchlistPage({ onOpen }) {
-  const { rows, watch, loadSummary, summaries, portfolio } = useStore()
+  const { rows, watch, loadSummary, summaries, portfolio, capital, realized, setCapital } = useStore()
   const [view, setView] = useState('watch') // 'watch' | 'owned'
   const [news, setNews] = useState({}) // symbol -> [{title,link}]
   const [loadingSum, setLoadingSum] = useState(false)
@@ -133,7 +133,15 @@ export default function WatchlistPage({ onOpen }) {
       {view === 'watch' ? (
         <WatchView items={items} news={news} onOpen={onOpen} empty={!watch.length} />
       ) : (
-        <OwnedView owned={owned} totals={totals} earned={earned} onOpen={onOpen} />
+        <OwnedView
+          owned={owned}
+          totals={totals}
+          earned={earned}
+          capital={capital}
+          realized={realized}
+          setCapital={setCapital}
+          onOpen={onOpen}
+        />
       )}
     </div>
   )
@@ -209,7 +217,7 @@ function WatchView({ items, news, onOpen, empty }) {
   )
 }
 
-function OwnedView({ owned, totals, earned, onOpen }) {
+function OwnedView({ owned, totals, earned, capital, realized, setCapital, onOpen }) {
   if (!owned.length) {
     return (
       <div className="pt-14 text-center text-muted">
@@ -225,43 +233,62 @@ function OwnedView({ owned, totals, earned, onOpen }) {
     )
   }
 
-  const pl = totals.value - totals.invested
-  const plPct = totals.invested > 0 ? (pl / totals.invested) * 100 : null
+  // capitale totale = quanto immesso + dividendi incassati (entrano nel capitale reale).
+  // da investire = capitale ancora libero (non dentro i titoli posseduti).
+  const capitale = (capital || 0) + earned
+  const daInvestire = capitale - totals.invested
+  const plOpen = totals.value - totals.invested // plus/minus non realizzata sui titoli aperti
 
   return (
     <div className="grid grid-cols-1 gap-3 pb-safe">
-      {/* riepilogo portafoglio */}
-      {totals.invested > 0 && (
-        <div className="bg-surface rounded-2xl border border-line p-3.5">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted">valore attuale</div>
-              <div className="text-2xl font-extrabold mt-0.5">{fmtMoney(totals.value, 'EUR', 2)}</div>
-            </div>
-            <div className={`text-right font-bold ${pl >= 0 ? 'text-pos' : 'text-danger'}`}>
-              <div className="flex items-center justify-end gap-1 text-sm">
-                <Icon name={pl >= 0 ? 'triUp' : 'triDn'} size={12} />
-                {fmtMoney(Math.abs(pl), 'EUR', 2)}
-              </div>
-              {plPct != null && <div className="text-[11px]">{fmtPctNum(plPct, 2)}</div>}
-            </div>
+      {/* riepilogo capitale */}
+      <div className="bg-surface rounded-2xl border border-line p-3.5">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted">capitale</div>
+            <div className="text-2xl font-extrabold mt-0.5">{fmtMoney(capitale, 'EUR', 2)}</div>
           </div>
-          <div className="mt-2.5 pt-2.5 border-t border-line flex items-start justify-between text-[11px] text-muted">
-            <span>
-              investito <span className="text-ink font-semibold">{fmtMoney(totals.invested, 'EUR', 2)}</span>
-              <span className="block text-[10px]">
-                dividendi guadagnati{' '}
-                <span className="text-accent font-semibold">{fmtMoney(earned, 'EUR', 2)}</span> netti
-              </span>
-            </span>
-            <span className="text-right">
-              dividendi/anno{' '}
-              <span className="text-accent font-semibold">{fmtMoney(totals.divNet, 'EUR', 2)}</span> netti
-              <span className="block text-[10px]">{fmtMoney(totals.divGross, 'EUR', 2)} lordi</span>
-            </span>
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-wider text-muted">da investire</div>
+            <div className={`text-lg font-extrabold mt-0.5 ${daInvestire >= 0 ? 'text-accent' : 'text-danger'}`}>
+              {fmtMoney(daInvestire, 'EUR', 2)}
+            </div>
           </div>
         </div>
-      )}
+
+        <CapitalInput capital={capital} setCapital={setCapital} />
+
+        <div className="mt-2.5 pt-2.5 border-t border-line grid grid-cols-2 gap-y-1.5 text-[11px] text-muted">
+          <span>
+            investito <span className="text-ink font-semibold">{fmtMoney(totals.invested, 'EUR', 2)}</span>
+          </span>
+          <span className="text-right">
+            valore attuale <span className="text-ink font-semibold">{fmtMoney(totals.value, 'EUR', 2)}</span>
+          </span>
+          <span className={plOpen >= 0 ? 'text-pos' : 'text-danger'}>
+            non realizzato{' '}
+            <span className="font-semibold">
+              {plOpen >= 0 ? '+' : '−'}
+              {fmtMoney(Math.abs(plOpen), 'EUR', 2)}
+            </span>
+          </span>
+          <span className={`text-right ${realized >= 0 ? 'text-pos' : 'text-danger'}`}>
+            realizzato{' '}
+            <span className="font-semibold">
+              {realized >= 0 ? '+' : '−'}
+              {fmtMoney(Math.abs(realized || 0), 'EUR', 2)}
+            </span>
+          </span>
+          <span>
+            dividendi incassati{' '}
+            <span className="text-accent font-semibold">{fmtMoney(earned, 'EUR', 2)}</span> netti
+          </span>
+          <span className="text-right">
+            dividendi/anno{' '}
+            <span className="text-accent font-semibold">{fmtMoney(totals.divNet, 'EUR', 2)}</span> netti
+          </span>
+        </div>
+      </div>
 
       {owned.map(({ row, stats, days }) => (
         <OwnedCard key={row.symbol} row={row} stats={stats} days={days} onOpen={onOpen} />
@@ -352,6 +379,27 @@ function OwnedCard({ row, stats, days, onOpen }) {
         </div>
       )}
     </div>
+  )
+}
+
+// Campo per immettere il capitale totale di partenza. Salva mentre scrivi.
+function CapitalInput({ capital, setCapital }) {
+  const [val, setVal] = useState(() => (capital ? String(capital).replace('.', ',') : ''))
+  return (
+    <label className="block mt-2.5">
+      <span className="text-[10px] uppercase tracking-wide text-muted">Capitale immesso (€)</span>
+      <input
+        value={val}
+        onChange={(e) => {
+          setVal(e.target.value)
+          const n = parseDecimal(e.target.value)
+          setCapital(n != null ? n : 0)
+        }}
+        inputMode="decimal"
+        placeholder="es. 6000"
+        className="mt-1 w-full bg-surface2 border border-line rounded-xl px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+      />
+    </label>
   )
 }
 

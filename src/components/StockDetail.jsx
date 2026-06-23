@@ -3,7 +3,7 @@ import { useStore } from '../state/store.jsx'
 import { api } from '../lib/api.js'
 import { computeSignals, isImportantNews } from '../lib/signals.js'
 import { fmtPct, fmtPctNum, fmtMoney, fmtNum, netYield, belowAvg, daysUntil, fmtDate, fmtDays, TAX } from '../lib/format.js'
-import { positionStats, parseDecimal } from '../lib/portfolio.js'
+import { positionStats, parseDecimal, accruedNetSince } from '../lib/portfolio.js'
 import SignalBadges from './SignalBadges.jsx'
 import Spinner from './Spinner.jsx'
 import PriceChart from './PriceChart.jsx'
@@ -12,7 +12,7 @@ import HealthCheck from './HealthCheck.jsx'
 import Icon from './Icon.jsx'
 
 export default function StockDetail({ symbol, onClose }) {
-  const { rows, summaries, loadSummary, isWatched, toggleWatch, notes, setNote, index, portfolio, setHolding, removeHolding } =
+  const { rows, summaries, loadSummary, isWatched, toggleWatch, notes, setNote, index, portfolio, setHolding, removeHolding, sellHolding } =
     useStore()
   const base = rows.find((r) => r.symbol === symbol) || { symbol, name: symbol }
   const [news, setNews] = useState(null)
@@ -207,6 +207,14 @@ export default function StockDetail({ symbol, onClose }) {
                 holding={portfolio[symbol]}
                 onSave={(data) => setHolding(symbol, data)}
               />
+              <SellButton
+                row={row}
+                holding={portfolio[symbol]}
+                onSell={(payload) => {
+                  sellHolding(symbol, payload)
+                  onClose()
+                }}
+              />
             </div>
           )}
 
@@ -323,6 +331,35 @@ function HoldingEditor({ row, holding, onSave }) {
         </p>
       )}
     </div>
+  )
+}
+
+// Tasto vendi: incassa valore attuale + dividendi maturati nel capitale, rimuove la posizione.
+function SellButton({ row, holding, onSell }) {
+  const stats = positionStats(row, holding)
+  const proceeds = stats?.value ?? null
+  const gain = stats?.pl ?? 0
+  const dividends = accruedNetSince(row, holding, holding?.since)
+
+  const handle = () => {
+    const msg =
+      proceeds != null
+        ? `Vendere ${row.name}?\n\nIncassi ≈ ${fmtMoney(proceeds, row.currency, 2)} ` +
+          `(${gain >= 0 ? 'guadagno' : 'perdita'} ${fmtMoney(Math.abs(gain), row.currency, 2)}` +
+          `${dividends > 0 ? ` + ${fmtMoney(dividends, row.currency, 2)} dividendi` : ''}).\n` +
+          `Vengono aggiunti al capitale e la posizione viene rimossa.`
+        : `Vendere ${row.name}? La posizione viene rimossa.`
+    if (window.confirm(msg)) onSell({ gain, dividends })
+  }
+
+  return (
+    <button
+      onClick={handle}
+      className="mt-3 w-full rounded-xl border border-danger/40 text-danger font-semibold text-sm py-2.5 flex items-center justify-center gap-2 active:bg-danger/10"
+    >
+      <Icon name="x" size={16} />
+      Vendi{proceeds != null ? ` · incassi ≈ ${fmtMoney(proceeds, row.currency, 2)}` : ''}
+    </button>
   )
 }
 

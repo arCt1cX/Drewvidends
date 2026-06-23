@@ -30,6 +30,10 @@ export function Store({ children }) {
     return p
   })
   const [index, setIndex] = useState({ changePct: null, spark: null }) // FTSE MIB, per confronto col mercato
+  // capitale = denaro totale immesso dall'utente; cresce coi dividendi incassati e col
+  // guadagno realizzato alla vendita. realized = totale plus/minusvalenze già incassate.
+  const [capital, setCapitalState] = useState(() => load('dv_capital', 0))
+  const [realized, setRealized] = useState(() => load('dv_realized', 0))
 
   const refresh = useCallback(async (fresh = false) => {
     setLoading(true)
@@ -120,6 +124,8 @@ export function Store({ children }) {
   useEffect(() => save('dv_watch', watch), [watch])
   useEffect(() => save('dv_notes', notes), [notes])
   useEffect(() => save('dv_portfolio', portfolio), [portfolio])
+  useEffect(() => save('dv_capital', capital), [capital])
+  useEffect(() => save('dv_realized', realized), [realized])
 
   const loadSummary = useCallback(
     async (symbol) => {
@@ -162,6 +168,16 @@ export function Store({ children }) {
     []
   )
 
+  const setCapital = useCallback((v) => setCapitalState(v != null && v >= 0 ? v : 0), [])
+
+  // Vendita di una posizione: incassa il guadagno realizzato (gain = valore attuale - investito)
+  // e i dividendi netti maturati, li somma al capitale, aggiorna il realizzato, rimuove la posizione.
+  const sellHolding = useCallback((sym, { gain = 0, dividends = 0 } = {}) => {
+    setCapitalState((c) => (c || 0) + gain + dividends)
+    setRealized((r) => (r || 0) + gain)
+    removeHolding(sym)
+  }, [removeHolding])
+
   // righe = universo + quote + divinfo + summary. Campi dividendo presi dalla fonte migliore
   // disponibile: summary (dettaglio) > divinfo (blocco, ex-date forward) > quote (trailing).
   const rows = useMemo(
@@ -202,7 +218,11 @@ export function Store({ children }) {
     setNote,
     portfolio,
     setHolding,
-    removeHolding
+    removeHolding,
+    capital,
+    realized,
+    setCapital,
+    sellHolding
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
