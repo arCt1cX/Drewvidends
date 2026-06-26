@@ -60,9 +60,8 @@ export default function CalendarPage({ onOpen }) {
               <div className="grid grid-cols-1 gap-2">
                 {items.map((r) => {
                   const yieldDec = r.summary?.yield ?? r.yield ?? null
-                  // € per azione/anno: rate dichiarato se c'è, altrimenti stima rendimento × prezzo
-                  const perShare =
-                    r.dividendRate ?? (yieldDec != null && r.price != null ? yieldDec * r.price : null)
+                  // € del singolo stacco in arrivo (stima dallo storico)
+                  const perShare = r.summary?.nextDividend ?? r.nextDividend ?? null
                   return (
                     <div
                       key={r.symbol}
@@ -79,7 +78,7 @@ export default function CalendarPage({ onOpen }) {
                       <div className="text-right shrink-0 ml-2">
                         <div className="text-accent font-bold text-sm">{fmtPct(yieldDec, 1)}</div>
                         {perShare != null && (
-                          <div className="text-[10px] text-muted">{fmtMoney(perShare, r.currency)}/az l’anno</div>
+                          <div className="text-[10px] text-muted">≈ {fmtMoney(perShare, r.currency)}/az</div>
                         )}
                       </div>
                     </div>
