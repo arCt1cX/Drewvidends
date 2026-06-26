@@ -1,4 +1,4 @@
-import { fetchSummary, fetchChart, sanitizeExDate, estimateNextDividend, json } from '../lib/yahoo.js'
+import { fetchSummary, fetchChart, sanitizeExDate, json } from '../lib/yahoo.js'
 
 // GET /api/summary?symbol=ENI.MI
 // Dettaglio dividendi: yield forward, ex-date ANNUNCIATA, payout, media yield 5 anni, storico dividendi.
@@ -51,8 +51,6 @@ export async function onRequestGet(context) {
     })
     .sort((a, b) => a.date - b.date)
 
-  const exDate = sanitizeExDate(sd.exDividendDate?.raw ?? null, history) // ex-date annunciata, ripulita dalle stime fasulle
-
   const result = {
     symbol,
     name: pr.longName || pr.shortName || symbol,
@@ -60,8 +58,7 @@ export async function onRequestGet(context) {
     currency: pr.currency || sd.currency || 'EUR',
     yield: sd.dividendYield?.raw ?? null, // forward, decimale
     dividendRate: sd.dividendRate?.raw ?? null,
-    nextDividend: estimateNextDividend(exDate, history), // importo del prossimo singolo stacco (stima)
-    exDate,
+    exDate: sanitizeExDate(sd.exDividendDate?.raw ?? null, history), // ex-date annunciata, ripulita dalle stime fasulle
     payoutRatio: sd.payoutRatio?.raw ?? null,
     fiveYearAvgYield: sd.fiveYearAvgDividendYield?.raw ?? null, // numero in % (es 6.16)
     high52: sd.fiftyTwoWeekHigh?.raw ?? null,

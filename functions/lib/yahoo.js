@@ -151,31 +151,6 @@ export function sanitizeExDate(exDate, history) {
   return exDate
 }
 
-// Stima dell'importo del PROSSIMO singolo stacco (non il totale annuo): prende il
-// dividendo storico dello stesso periodo dell'anno, cioè quello più vicino a ~12 mesi
-// prima della prossima ex-date. Così per chi paga acconto+saldo con importi diversi
-// (es. Poste) becca lo stacco giusto e non la media annua. Ripiega sull'ultimo noto.
-export function estimateNextDividend(exDate, history) {
-  const divs = (Array.isArray(history) ? history : [])
-    .filter((h) => h?.date != null && h?.amount != null)
-    .sort((a, b) => a.date - b.date)
-  if (!divs.length) return null
-  if (!exDate) return divs[divs.length - 1].amount
-  const target = exDate - 365 * 86400
-  let best = null
-  let bestDiff = Infinity
-  for (const d of divs) {
-    const diff = Math.abs(d.date - target)
-    if (diff < bestDiff) {
-      bestDiff = diff
-      best = d
-    }
-  }
-  // accetta il match solo se cade entro ~2 mesi dal periodo atteso
-  if (best && bestDiff <= 60 * 86400) return best.amount
-  return divs[divs.length - 1].amount
-}
-
 // quoteSummary per dati dividendo in blocco: usata da /api/divinfo. Affianca una
 // chart leggera (solo eventi dividendo) per validare la ex-date forward con lo storico.
 export async function fetchDivInfo(symbol) {
@@ -197,12 +172,10 @@ export async function fetchDivInfo(symbol) {
     .map((d) => ({ date: d.date }))
     .sort((a, b) => a.date - b.date)
   const rawEx = sd.exDividendDate?.raw ?? ce?.dividend?.exDate?.raw ?? null
-  const exDate = sanitizeExDate(rawEx, history)
   return {
     yield: sd.dividendYield?.raw ?? null,
     dividendRate: sd.dividendRate?.raw ?? null, // dividendo annuo per azione (forward, in valuta)
-    nextDividend: estimateNextDividend(exDate, history), // importo del prossimo singolo stacco (stima)
-    exDate,
+    exDate: sanitizeExDate(rawEx, history),
     payoutRatio: sd.payoutRatio?.raw ?? null,
     fiveYearAvgYield: sd.fiveYearAvgDividendYield?.raw ?? null,
     paymentDate: ce?.dividendDate?.raw ?? null
