@@ -174,6 +174,7 @@ export async function fetchDivInfo(symbol) {
   const rawEx = sd.exDividendDate?.raw ?? ce?.dividend?.exDate?.raw ?? null
   return {
     yield: sd.dividendYield?.raw ?? null,
+    dividendRate: sd.dividendRate?.raw ?? null, // dividendo annuo per azione (forward, in valuta)
     exDate: sanitizeExDate(rawEx, history),
     payoutRatio: sd.payoutRatio?.raw ?? null,
     fiveYearAvgYield: sd.fiveYearAvgDividendYield?.raw ?? null,

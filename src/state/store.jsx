@@ -207,6 +207,7 @@ export function Store({ children }) {
           ...u,
           ...q,
           yield: s?.yield ?? d.yield ?? q.yield ?? null,
+          dividendRate: s?.dividendRate ?? d.dividendRate ?? q.dividendRate ?? null, // € per azione/anno
           exDate: s?.exDate ?? d.exDate ?? null, // solo forward (no campo trailing inaffidabile)
           payoutRatio: s?.payoutRatio ?? d.payoutRatio ?? null,
           fiveYearAvgYield: s?.fiveYearAvgYield ?? d.fiveYearAvgYield ?? null,

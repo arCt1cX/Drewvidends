@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../state/store.jsx'
-import { fmtPct, fmtDate, fmtDays, daysUntil } from '../lib/format.js'
+import { fmtPct, fmtMoney, fmtDate, fmtDays, daysUntil } from '../lib/format.js'
 import Icon from '../components/Icon.jsx'
 
 export default function CalendarPage({ onOpen }) {
@@ -60,6 +60,9 @@ export default function CalendarPage({ onOpen }) {
               <div className="grid grid-cols-1 gap-2">
                 {items.map((r) => {
                   const yieldDec = r.summary?.yield ?? r.yield ?? null
+                  // € per azione/anno: rate dichiarato se c'è, altrimenti stima rendimento × prezzo
+                  const perShare =
+                    r.dividendRate ?? (yieldDec != null && r.price != null ? yieldDec * r.price : null)
                   return (
                     <div
                       key={r.symbol}
@@ -73,8 +76,11 @@ export default function CalendarPage({ onOpen }) {
                         </div>
                         <div className="text-[11px] text-muted">ex {fmtDate(r.ex)} · {fmtDays(r.days)}</div>
                       </div>
-                      <div className="text-accent font-bold text-sm shrink-0 ml-2">
-                        {fmtPct(yieldDec, 1)}
+                      <div className="text-right shrink-0 ml-2">
+                        <div className="text-accent font-bold text-sm">{fmtPct(yieldDec, 1)}</div>
+                        {perShare != null && (
+                          <div className="text-[10px] text-muted">{fmtMoney(perShare, r.currency)}/az l’anno</div>
+                        )}
                       </div>
                     </div>
                   )
