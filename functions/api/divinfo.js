@@ -19,8 +19,12 @@ export async function onRequestGet(context) {
 
   const results = await Promise.all(
     symbols.map(async (sym) => {
-      const info = await fetchDivInfo(sym)
-      return [sym, info]
+      try {
+        const info = await fetchDivInfo(sym)
+        return [sym, info]
+      } catch {
+        return [sym, null]
+      }
     })
   )
   const out = {}

@@ -5,44 +5,66 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 
 // Auth (cookie+crumb) cachata a livello di isolate per ~30 min.
 let authCache = { cookie: '', crumb: '', ts: 0 }
+// Mutex: con Promise.all su 40 simboli, 40 getAuth partono insieme -> senza lock
+// martellerebbero fc.yahoo.com/getcrumb (subrequest inutili). Un solo giro alla volta.
+let authInFlight = null
 
-async function getAuth(force = false) {
-  const fresh = Date.now() - authCache.ts < 30 * 60 * 1000
-  if (!force && fresh && authCache.crumb) return authCache
-
-  // 1) prendi cookie (fc.yahoo.com risponde 404 ma setta il cookie A1/A3)
-  const r = await fetch('https://fc.yahoo.com', { headers: { 'User-Agent': UA } })
-  let cookie = ''
+// Estrae "k=v; k2=v2" dai Set-Cookie di una response.
+function extractCookie(r) {
   const setCookies = typeof r.headers.getSetCookie === 'function' ? r.headers.getSetCookie() : null
   if (setCookies && setCookies.length) {
-    cookie = setCookies.map((c) => c.split(';')[0]).join('; ')
-  } else {
-    const raw = r.headers.get('set-cookie') || ''
-    cookie = raw.split(/,(?=\s*\w+=)/).map((c) => c.split(';')[0].trim()).filter(Boolean).join('; ')
+    return setCookies.map((c) => c.split(';')[0]).join('; ')
+  }
+  const raw = r.headers.get('set-cookie') || ''
+  return raw.split(/,(?=\s*\w+=)/).map((c) => c.split(';')[0].trim()).filter(Boolean).join('; ')
+}
+
+async function doAuth() {
+  // 1) cookie A1/A3. fc.yahoo.com è morto -> fallback su finance.yahoo.com. Mai lanciare.
+  let cookie = ''
+  for (const host of ['https://fc.yahoo.com', 'https://finance.yahoo.com']) {
+    try {
+      const r = await fetch(host, { headers: { 'User-Agent': UA }, redirect: 'follow' })
+      cookie = extractCookie(r)
+      if (cookie) break
+    } catch { /* host irraggiungibile: prova il prossimo */ }
   }
 
-  // 2) prendi crumb usando quel cookie
-  const cr = await fetch('https://query1.finance.yahoo.com/v1/test/getcrumb', {
-    headers: { 'User-Agent': UA, Cookie: cookie }
-  })
-  const crumb = (await cr.text()).trim()
+  // 2) crumb con quel cookie
+  let crumb = ''
+  try {
+    const cr = await fetch('https://query1.finance.yahoo.com/v1/test/getcrumb', {
+      headers: { 'User-Agent': UA, Cookie: cookie }
+    })
+    const txt = (await cr.text()).trim()
+    // un crumb valido è una stringa corta senza spazi/HTML
+    if (txt && txt.length < 40 && !/[<>\s]/.test(txt)) crumb = txt
+  } catch { /* niente crumb: authedJson ritenterà */ }
 
   authCache = { cookie, crumb, ts: Date.now() }
   return authCache
 }
 
+async function getAuth(force = false) {
+  const fresh = Date.now() - authCache.ts < 30 * 60 * 1000
+  if (!force && fresh && authCache.crumb) return authCache
+  if (authInFlight) return authInFlight
+  authInFlight = doAuth().finally(() => { authInFlight = null })
+  return authInFlight
+}
+
 // fetch JSON con auth; ritenta una volta rinfrescando il crumb se scade.
 async function authedJson(buildUrl) {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const { cookie, crumb } = await getAuth(attempt === 1)
-    const url = buildUrl(crumb)
-    const res = await fetch(url, { headers: { 'User-Agent': UA, Cookie: cookie } })
-    const txt = await res.text()
-    if (res.status === 401 || /Invalid Crumb/i.test(txt)) continue
     try {
+      const { cookie, crumb } = await getAuth(attempt === 1)
+      const url = buildUrl(crumb)
+      const res = await fetch(url, { headers: { 'User-Agent': UA, Cookie: cookie } })
+      const txt = await res.text()
+      if (res.status === 401 || res.status === 403 || /Invalid Crumb|Unauthorized/i.test(txt)) continue
       return JSON.parse(txt)
     } catch {
-      return null
+      // errore rete / JSON malformato: ritenta una volta rinfrescando l'auth
     }
   }
   return null
