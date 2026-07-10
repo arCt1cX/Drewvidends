@@ -54,11 +54,25 @@ export function Store({ children }) {
     setLoading(true)
     setError(null)
     try {
+      // Blocchi da 50 IN PARALLELO: i prezzi appaiono man mano che i blocchi
+      // rispondono, invece di aspettare l'intero universo (~400 titoli) in un colpo.
       const list = universe.map((u) => u.symbol)
-      const data = await api.quotes(list, fresh)
-      const map = {}
-      for (const q of data) map[q.symbol] = q
-      setQuotes(map)
+      const chunk = 50
+      const jobs = []
+      for (let i = 0; i < list.length; i += chunk) {
+        const part = list.slice(i, i + chunk)
+        jobs.push(
+          api.quotes(part, fresh).then((data) => {
+            setQuotes((prev) => {
+              const next = { ...prev }
+              for (const q of data) next[q.symbol] = q
+              return next
+            })
+          })
+        )
+      }
+      const res = await Promise.allSettled(jobs)
+      if (res.every((r) => r.status === 'rejected')) throw new Error('errore caricamento')
     } catch (e) {
       setError(e.message || 'errore caricamento')
     } finally {
@@ -102,9 +116,9 @@ export function Store({ children }) {
     let alive = true
     ;(async () => {
       try {
-        const [q, sp] = await Promise.all([api.quotes(['FTSEMIB.MI']), api.spark(['FTSEMIB.MI'])])
+        const m = await api.market()
         if (!alive) return
-        setIndex({ ...(q?.[0] || {}), spark: sp?.['FTSEMIB.MI'] ?? null })
+        if (m) setIndex(m)
       } catch {
         /* ignora */
       }

@@ -18,6 +18,7 @@ export const api = {
     getJson('/api/divinfo?symbols=' + encodeURIComponent(symbols.join(','))),
   spark: (symbols) =>
     getJson('/api/spark?symbols=' + encodeURIComponent(symbols.join(','))),
+  market: () => getJson('/api/market'),
   summary: (symbol) => getJson('/api/summary?symbol=' + encodeURIComponent(symbol)),
   chart: (symbol, range) =>
     getJson('/api/chart?symbol=' + encodeURIComponent(symbol) + '&range=' + encodeURIComponent(range)),
