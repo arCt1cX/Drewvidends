@@ -102,6 +102,25 @@ const PATHS = {
   ),
   arrowDn: (p) => <path {...p} d="M12 5v14M6 13l6 6 6-6" />,
   x: (p) => <path {...p} d="M6 6l12 12M18 6L6 18" />,
+  check: (p) => (
+    <>
+      <circle cx="12" cy="12" r="8.5" {...p} />
+      <path {...p} d="M8.4 12.3l2.4 2.4 4.8-5.2" />
+    </>
+  ),
+  checkFill: () => (
+    <>
+      <circle cx="12" cy="12" r="8.5" fill="currentColor" stroke="none" />
+      <path
+        d="M8.4 12.3l2.4 2.4 4.8-5.2"
+        fill="none"
+        stroke="#14161b"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </>
+  ),
   note: (p) => (
     <>
       <path {...p} d="M5 4h11l4 4v12H5z" />

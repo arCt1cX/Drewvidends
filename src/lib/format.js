@@ -14,12 +14,16 @@ export function fmtPctNum(v, dec = 2) {
   return v.toFixed(dec).replace('.', ',') + '%'
 }
 
-export function fmtMoney(v, cur = 'EUR') {
+// dec opzionale: forza i decimali (es. 2 per importi di guadagno/dividendo).
+// Default: 3 decimali sotto i 10€ (prezzi azione tipo 3,774), altrimenti 2.
+export function fmtMoney(v, cur = 'EUR', dec) {
   if (v == null || isNaN(v)) return '—'
+  const d = dec ?? (v < 10 ? 3 : 2)
   return new Intl.NumberFormat('it-IT', {
     style: 'currency',
     currency: cur || 'EUR',
-    maximumFractionDigits: v < 10 ? 3 : 2
+    minimumFractionDigits: Math.min(2, d),
+    maximumFractionDigits: d
   }).format(v)
 }
 

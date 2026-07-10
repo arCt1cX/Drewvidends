@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { api } from '../lib/api.js'
 import { computeSignals, isImportantNews } from '../lib/signals.js'
-import { fmtPct, fmtPctNum, fmtMoney, netYield, belowAvg, daysUntil, fmtDate, fmtDays } from '../lib/format.js'
+import { fmtPct, fmtPctNum, fmtMoney, fmtNum, netYield, belowAvg, daysUntil, fmtDate, fmtDays, TAX } from '../lib/format.js'
+import { positionStats, parseDecimal, accruedNetSince } from '../lib/portfolio.js'
 import SignalBadges from './SignalBadges.jsx'
 import Spinner from './Spinner.jsx'
 import PriceChart from './PriceChart.jsx'
@@ -11,7 +12,8 @@ import HealthCheck from './HealthCheck.jsx'
 import Icon from './Icon.jsx'
 
 export default function StockDetail({ symbol, onClose }) {
-  const { rows, summaries, loadSummary, isWatched, toggleWatch, notes, setNote, index } = useStore()
+  const { rows, summaries, loadSummary, isWatched, toggleWatch, notes, setNote, index, portfolio, setHolding, removeHolding, sellHolding } =
+    useStore()
   const base = rows.find((r) => r.symbol === symbol) || { symbol, name: symbol }
   const [news, setNews] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -48,6 +50,8 @@ export default function StockDetail({ symbol, onClose }) {
   const importantNews = (news || []).filter((n) => isImportantNews(n.title))
   const otherNews = (news || []).filter((n) => !isImportantNews(n.title))
 
+  const owned = !!portfolio[symbol]
+
   return (
     <div className="fixed inset-0 z-40 bg-black/60 flex items-end sm:items-center justify-center">
       <div className="bg-bg w-full max-w-screen-sm max-h-[92vh] rounded-t-3xl sm:rounded-3xl border-t sm:border border-line overflow-y-auto">
@@ -58,6 +62,16 @@ export default function StockDetail({ symbol, onClose }) {
             <div className="text-[11.5px] font-semibold text-muted tracking-wide">{symbol.replace('.MI', '')}</div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
+            {/* spunta "comprato": solo per titoli in watchlist, mostra la sezione acquisto */}
+            {watched && (
+              <button
+                onClick={() => (owned ? removeHolding(symbol) : setHolding(symbol, {}))}
+                className={owned ? 'text-accent' : 'text-muted'}
+                aria-label="comprato"
+              >
+                <Icon name={owned ? 'checkFill' : 'check'} size={20} />
+              </button>
+            )}
             <button onClick={() => toggleWatch(symbol)} className={watched ? 'text-accent' : 'text-muted'}>
               <Icon name={watched ? 'starFill' : 'star'} size={20} />
             </button>
@@ -183,6 +197,27 @@ export default function StockDetail({ symbol, onClose }) {
             )}
           </div>
 
+          {/* il mio acquisto: compare solo con la spunta "comprato" nell'header */}
+          {owned && (
+            <div>
+              <SectionTitle>Il mio acquisto</SectionTitle>
+              <HoldingEditor
+                key={symbol}
+                row={row}
+                holding={portfolio[symbol]}
+                onSave={(data) => setHolding(symbol, data)}
+              />
+              <SellButton
+                row={row}
+                holding={portfolio[symbol]}
+                onSell={(payload) => {
+                  sellHolding(symbol, payload)
+                  onClose()
+                }}
+              />
+            </div>
+          )}
+
           {/* note */}
           <div>
             <SectionTitle>Le mie note</SectionTitle>
@@ -212,6 +247,121 @@ function Stat({ label, value, hint, tone, big }) {
       <div className={`${big ? 'text-lg' : 'text-base'} font-bold mt-1 ${color}`}>{value}</div>
       {hint && <div className={`text-[10px] mt-0.5 ${tone ? color : 'text-muted'}`}>{hint}</div>}
     </div>
+  )
+}
+
+// Editor acquisto: costo di 1 azione al momento dell'acquisto + euro totali investiti.
+// Salva mentre scrivi e mostra subito azioni stimate, P/L e dividendi della posizione.
+function HoldingEditor({ row, holding, onSave }) {
+  const fmtInput = (v) => (v != null ? String(v).replace('.', ',') : '')
+  const [price, setPrice] = useState(() => fmtInput(holding?.price))
+  const [invested, setInvested] = useState(() => fmtInput(holding?.invested))
+  const stats = positionStats(row, holding)
+
+  const inputCls =
+    'mt-1 w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-sm text-ink outline-none focus:border-accent'
+
+  return (
+    <div className="space-y-2.5">
+      <div className="grid grid-cols-2 gap-2.5">
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-wide text-muted">Costo di 1 azione all’acquisto</span>
+          <input
+            value={price}
+            onChange={(e) => {
+              setPrice(e.target.value)
+              onSave({ price: parseDecimal(e.target.value) })
+            }}
+            inputMode="decimal"
+            placeholder="es. 2,30"
+            className={inputCls}
+          />
+        </label>
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-wide text-muted">Totale investito (€)</span>
+          <input
+            value={invested}
+            onChange={(e) => {
+              setInvested(e.target.value)
+              onSave({ invested: parseDecimal(e.target.value) })
+            }}
+            inputMode="decimal"
+            placeholder="es. 1000"
+            className={inputCls}
+          />
+        </label>
+      </div>
+
+      {stats ? (
+        <>
+          {stats.qty != null && (
+            <p className="text-[11px] text-muted">
+              ≈ <span className="text-ink font-semibold">{fmtNum(stats.qty, 2)}</span> azioni a{' '}
+              {fmtMoney(holding.price, row.currency)}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2.5">
+            <Stat
+              label="Guadagno / Perdita"
+              value={stats.pl != null ? fmtMoney(stats.pl, row.currency, 2) : fmtPctNum(stats.plPct, 2)}
+              hint={stats.pl != null ? fmtPctNum(stats.plPct, 2) : 'inserisci il totale investito per il valore in €'}
+              tone={stats.plPct == null ? undefined : stats.plPct >= 0 ? 'good' : 'bad'}
+            />
+            <Stat
+              label="Dividendi annui netti (stima)"
+              value={stats.divNet != null ? fmtMoney(stats.divNet, row.currency, 2) : '—'}
+              hint={stats.divGross != null ? `lordi ${fmtMoney(stats.divGross, row.currency, 2)}` : 'serve il totale investito'}
+            />
+            <Stat
+              label="Yield sul mio prezzo"
+              value={stats.yoc != null ? fmtPctNum(stats.yoc, 2) : '—'}
+              hint={stats.yoc != null ? `netto ${fmtPctNum(stats.yoc * (1 - TAX), 2)}` : null}
+            />
+            <Stat
+              label="Prossimo dividendo netto (stima)"
+              value={stats.nextPayoutNet != null ? fmtMoney(stats.nextPayoutNet, row.currency, 2) : '—'}
+              hint="in base all'ultimo pagamento"
+            />
+          </div>
+        </>
+      ) : (
+        <p className="text-xs text-muted leading-snug">
+          Scrivi quanto costava un’azione quando hai comprato e quanti euro ci hai messo: lo ritrovi in
+          Watchlist → Comprati con guadagno e dividendi stimati.
+        </p>
+      )}
+    </div>
+  )
+}
+
+// Tasto vendi: l'incasso (valore attuale) libera liquidità in «da investire» e il
+// guadagno diventa realizzato. I dividendi NON si riaggiungono: erano già nel capitale,
+// vengono solo trasferiti dal conteggio live a quello fisso quando la posizione sparisce.
+function SellButton({ row, holding, onSell }) {
+  const stats = positionStats(row, holding)
+  const proceeds = stats?.value ?? null
+  const gain = stats?.pl ?? 0
+  const dividends = accruedNetSince(row, holding, holding?.since)
+
+  const handle = () => {
+    const msg =
+      proceeds != null
+        ? `Vendere ${row.name}?\n\n` +
+          `Incasso della vendita ≈ ${fmtMoney(proceeds, row.currency, 2)}: va in «da investire».\n` +
+          `${gain >= 0 ? 'Guadagno' : 'Perdita'} realizzato: ${fmtMoney(Math.abs(gain), row.currency, 2)}.\n` +
+          `I dividendi erano già contati nel capitale. La posizione viene rimossa.`
+        : `Vendere ${row.name}? La posizione viene rimossa.`
+    if (window.confirm(msg)) onSell({ gain, dividends })
+  }
+
+  return (
+    <button
+      onClick={handle}
+      className="mt-3 w-full rounded-xl border border-danger/40 text-danger font-semibold text-sm py-2.5 flex items-center justify-center gap-2 active:bg-danger/10"
+    >
+      <Icon name="x" size={16} />
+      Vendi{proceeds != null ? ` · incassi ≈ ${fmtMoney(proceeds, row.currency, 2)}` : ''}
+    </button>
   )
 }
 

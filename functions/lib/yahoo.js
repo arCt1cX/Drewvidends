@@ -128,45 +128,76 @@ export async function fetchNews(symbol, count = 10) {
   return data?.news || []
 }
 
-// Mini-serie prezzi in blocco (endpoint "spark") per le sparkline delle card. 1 chiamata = molti titoli.
+// Mini-serie prezzi per le sparkline delle card. Yahoo ha dismesso l'endpoint batch
+// v7 "spark", quindi usiamo il chart v8 (lo stesso del grafico prezzi, niente crumb)
+// un simbolo alla volta, in parallelo. Max ~40 simboli per chiamata (limite subrequest).
 export async function fetchSpark(symbols, range = '1mo', interval = '1d') {
+  const results = await Promise.all(
+    symbols.map(async (sym) => {
+      try {
+        const c = await fetchChart(sym, range, interval)
+        const closes = (c?.indicators?.quote?.[0]?.close || []).filter((v) => v != null)
+        return [sym, closes.length >= 2 ? closes : null]
+      } catch {
+        return [sym, null]
+      }
+    })
+  )
   const out = {}
-  const chunkSize = 80
-  for (let i = 0; i < symbols.length; i += chunkSize) {
-    const chunk = symbols.slice(i, i + chunkSize)
-    const data = await authedJson(
-      (crumb) =>
-        'https://query1.finance.yahoo.com/v7/finance/spark?symbols=' +
-        encodeURIComponent(chunk.join(',')) +
-        `&range=${range}&interval=${interval}&crumb=` +
-        encodeURIComponent(crumb)
-    )
-    const arr = data?.spark?.result || []
-    for (const r of arr) {
-      const resp = r?.response?.[0]
-      const closes = (resp?.indicators?.quote?.[0]?.close || []).filter((c) => c != null)
-      if (closes.length >= 2) out[r.symbol] = closes
-    }
-  }
+  for (const [sym, closes] of results) if (closes) out[sym] = closes
   return out
 }
 
-// quoteSummary "leggera" per dati dividendo in blocco (niente chart): usata da /api/divinfo.
+// Scarta una ex-date "forward" implausibile.
+// Dopo lo stacco Yahoo a volte rimette in exDividendDate una STIMA ingenua
+// (ultimo stacco + ~1 mese): sbagliata per chi paga ogni 6/12 mesi. Es. Poste
+// Italiane (stacco saldo a giugno, acconto a novembre) finiva col mostrare una
+// finta cedola "a luglio". Con lo storico verifichiamo che la prossima ex-date
+// cada DOPO l'ultimo stacco e ad almeno ~metà dell'intervallo tipico tra cedole.
+// history: array di { date } (epoch sec) degli stacchi passati. Senza dati
+// sufficienti per giudicare, ci si fida del valore Yahoo.
+export function sanitizeExDate(exDate, history) {
+  if (!exDate) return null
+  const dates = (Array.isArray(history) ? history : [])
+    .map((h) => h?.date)
+    .filter((d) => d != null)
+    .sort((a, b) => a - b)
+  if (dates.length < 2) return exDate
+  const last = dates[dates.length - 1]
+  if (exDate <= last) return null // una "prossima" deve cadere dopo l'ultimo stacco noto
+  const gaps = []
+  for (let i = 1; i < dates.length; i++) gaps.push(dates[i] - dates[i - 1])
+  gaps.sort((a, b) => a - b)
+  const median = gaps[Math.floor(gaps.length / 2)]
+  if (exDate - last < median * 0.5) return null // troppo vicino: stima fasulla "+1 mese"
+  return exDate
+}
+
+// quoteSummary per dati dividendo in blocco: usata da /api/divinfo. Affianca una
+// chart leggera (solo eventi dividendo) per validare la ex-date forward con lo storico.
 export async function fetchDivInfo(symbol) {
-  const data = await authedJson(
-    (crumb) =>
-      'https://query2.finance.yahoo.com/v10/finance/quoteSummary/' +
-      encodeURIComponent(symbol) +
-      '?modules=summaryDetail,calendarEvents&crumb=' +
-      encodeURIComponent(crumb)
-  )
+  const [data, chart] = await Promise.all([
+    authedJson(
+      (crumb) =>
+        'https://query2.finance.yahoo.com/v10/finance/quoteSummary/' +
+        encodeURIComponent(symbol) +
+        '?modules=summaryDetail,calendarEvents&crumb=' +
+        encodeURIComponent(crumb)
+    ),
+    fetchChart(symbol, '3y', '1mo')
+  ])
   const r = data?.quoteSummary?.result?.[0]
   if (!r) return null
   const sd = r.summaryDetail || {}
   const ce = r.calendarEvents || {}
+  const history = (chart?.events?.dividends ? Object.values(chart.events.dividends) : [])
+    .map((d) => ({ date: d.date }))
+    .sort((a, b) => a.date - b.date)
+  const rawEx = sd.exDividendDate?.raw ?? ce?.dividend?.exDate?.raw ?? null
   return {
     yield: sd.dividendYield?.raw ?? null,
-    exDate: sd.exDividendDate?.raw ?? ce?.dividend?.exDate?.raw ?? null,
+    dividendRate: sd.dividendRate?.raw ?? null, // dividendo annuo per azione (forward, in valuta)
+    exDate: sanitizeExDate(rawEx, history),
     payoutRatio: sd.payoutRatio?.raw ?? null,
     fiveYearAvgYield: sd.fiveYearAvgDividendYield?.raw ?? null,
     paymentDate: ce?.dividendDate?.raw ?? null

@@ -2,30 +2,35 @@ import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { api } from '../lib/api.js'
 import { computeSignals, score, isImportantNews } from '../lib/signals.js'
-import { fmtPct, fmtMoney, daysUntil, fmtDays } from '../lib/format.js'
+import { fmtPct, fmtPctNum, fmtMoney, fmtNum, daysUntil, fmtDays, fmtDate } from '../lib/format.js'
+import { positionStats, accruedNetSince, parseDecimal } from '../lib/portfolio.js'
 import SignalBadges from '../components/SignalBadges.jsx'
-import Spinner from '../components/Spinner.jsx'
 import Icon from '../components/Icon.jsx'
 
 export default function WatchlistPage({ onOpen }) {
-  const { rows, watch, loadSummary, summaries } = useStore()
+  const { rows, watch, loadSummary, summaries, portfolio, capital, realized, realizedDiv, setCapital } = useStore()
+  const [view, setView] = useState('watch') // 'watch' | 'owned'
   const [news, setNews] = useState({}) // symbol -> [{title,link}]
   const [loadingSum, setLoadingSum] = useState(false)
 
-  // carica summary (per i segnali) di tutti i titoli in watchlist
+  // carica summary (segnali + storico dividendi) di watchlist E titoli comprati
+  const allSyms = useMemo(
+    () => [...new Set([...watch, ...Object.keys(portfolio)])],
+    [watch, portfolio]
+  )
   useEffect(() => {
     let alive = true
     ;(async () => {
       setLoadingSum(true)
-      await Promise.all(watch.map((s) => loadSummary(s)))
+      await Promise.all(allSyms.map((s) => loadSummary(s)))
       if (alive) setLoadingSum(false)
     })()
     return () => {
       alive = false
     }
-  }, [watch, loadSummary])
+  }, [allSyms, loadSummary])
 
-  // carica news importanti
+  // carica news importanti (solo per la watchlist)
   useEffect(() => {
     let alive = true
     watch.forEach(async (sym) => {
@@ -53,9 +58,100 @@ export default function WatchlistPage({ onOpen }) {
       .sort((a, b) => b.sc - a.sc)
   }, [watch, rows, summaries])
 
-  if (!watch.length) {
+  // titoli comprati: ordinati per ex-date più vicina (così vedo subito chi sta per staccare)
+  const owned = useMemo(() => {
+    return Object.keys(portfolio)
+      .map((sym) => {
+        const r = rows.find((x) => x.symbol === sym)
+        if (!r) return null
+        const row = { ...r, summary: summaries[sym] || null }
+        const exDate = row.summary?.exDate ?? row.exDate ?? null
+        const days = exDate ? daysUntil(exDate) : null
+        const holding = portfolio[sym]
+        return { row, holding, stats: positionStats(row, holding), exDate, days }
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        const da = a.days != null && a.days >= 0 ? a.days : Infinity
+        const db = b.days != null && b.days >= 0 ? b.days : Infinity
+        return da - db
+      })
+  }, [portfolio, rows, summaries])
+
+  // totali portafoglio (solo posizioni con quantità)
+  const totals = useMemo(() => {
+    const t = { invested: 0, value: 0, divNet: 0, divGross: 0 }
+    for (const { stats } of owned) {
+      if (!stats?.invested || stats.value == null) continue
+      t.invested += stats.invested
+      t.value += stats.value
+      if (stats.divNet != null) t.divNet += stats.divNet
+      if (stats.divGross != null) t.divGross += stats.divGross
+    }
+    return t
+  }, [owned])
+
+  // dividendi netti guadagnati: stacchi avvenuti da quando ogni titolo ha la spunta "comprato"
+  const earned = useMemo(
+    () =>
+      owned.reduce(
+        (a, { row, holding }) =>
+          holding?.since ? a + accruedNetSince(row, holding, holding.since) : a,
+        0
+      ),
+    [owned]
+  )
+
+  return (
+    <div className="px-4">
+      <header className="pt-3 pb-2">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">{view === 'watch' ? 'Watchlist' : 'I miei titoli'}</h1>
+          {loadingSum && <span className="text-[11px] text-muted">analizzo…</span>}
+        </div>
+        {/* toggle watchlist / comprati */}
+        <div className="mt-2.5 grid grid-cols-2 gap-1 bg-surface border border-line rounded-xl p-1 text-center text-xs font-bold">
+          <button
+            onClick={() => setView('watch')}
+            className={`py-1.5 rounded-lg transition-colors ${
+              view === 'watch' ? 'bg-surface2 text-ink' : 'text-muted'
+            }`}
+          >
+            Watchlist
+          </button>
+          <button
+            onClick={() => setView('owned')}
+            className={`py-1.5 rounded-lg transition-colors ${
+              view === 'owned' ? 'bg-surface2 text-ink' : 'text-muted'
+            }`}
+          >
+            Comprati
+          </button>
+        </div>
+      </header>
+
+      {view === 'watch' ? (
+        <WatchView items={items} news={news} onOpen={onOpen} empty={!watch.length} />
+      ) : (
+        <OwnedView
+          owned={owned}
+          totals={totals}
+          earned={earned}
+          capital={capital}
+          realized={realized}
+          realizedDiv={realizedDiv}
+          setCapital={setCapital}
+          onOpen={onOpen}
+        />
+      )}
+    </div>
+  )
+}
+
+function WatchView({ items, news, onOpen, empty }) {
+  if (empty) {
     return (
-      <div className="px-4 pt-16 text-center text-muted">
+      <div className="pt-14 text-center text-muted">
         <Icon name="star" size={40} className="mx-auto mb-3 text-line" />
         <p className="text-sm">
           Nessun titolo in watchlist.
@@ -65,70 +161,266 @@ export default function WatchlistPage({ onOpen }) {
       </div>
     )
   }
+  return (
+    <div className="grid grid-cols-1 gap-3 pb-safe">
+      {items.map(({ row, signals, sc }) => {
+        const yieldDec = row.summary?.yield ?? row.yield ?? null
+        const exDate = row.summary?.exDate ?? row.exDate ?? null
+        const days = exDate ? daysUntil(exDate) : null
+        const imp = news[row.symbol] || []
+        return (
+          <div key={row.symbol} className="bg-surface rounded-2xl border border-line p-3.5">
+            <div onClick={() => onOpen(row.symbol)} className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="font-semibold text-sm truncate">{row.name}</div>
+                <div className="text-[11px] text-muted">{row.symbol.replace('.MI', '')}</div>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <span className="text-xl font-bold text-accent">{fmtPct(yieldDec, 2)}</span>
+                  <span className="text-xs text-muted">{fmtMoney(row.price, row.currency)}</span>
+                  {days != null && days >= 0 && (
+                    <span className="text-[11px] text-muted">· ex {fmtDays(days)}</span>
+                  )}
+                </div>
+              </div>
+              <ScoreRing value={sc} />
+            </div>
+
+            {signals.length > 0 && (
+              <div className="mt-3">
+                <SignalBadges signals={signals} />
+              </div>
+            )}
+
+            {imp.length > 0 && (
+              <div className="mt-3 border-t border-line pt-2">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted uppercase tracking-wide mb-1.5">
+                  <Icon name="bell" size={13} /> News rilevanti
+                </div>
+                <div className="space-y-1">
+                  {imp.map((n, i) => (
+                    <a
+                      key={i}
+                      href={n.link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block text-xs text-muted hover:text-accent leading-snug"
+                    >
+                      · {n.title}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function OwnedView({ owned, totals, earned, capital, realized, realizedDiv, setCapital, onOpen }) {
+  if (!owned.length) {
+    return (
+      <div className="pt-14 text-center text-muted">
+        <Icon name="note" size={40} className="mx-auto mb-3 text-line" />
+        <p className="text-sm">
+          Nessun titolo comprato.
+          <br />
+          Apri un titolo in watchlist e tocca la spunta
+          <br />
+          accanto alla stella per segnarlo come comprato.
+        </p>
+      </div>
+    )
+  }
+
+  // dividendi totali incassati = quelli dei titoli ancora aperti + quelli dei titoli venduti.
+  // capitale totale = immesso + guadagno realizzato + dividendi totali (entrano nel capitale reale).
+  // da investire = capitale ancora libero (non dentro i titoli posseduti).
+  const dividendiIncassati = earned + (realizedDiv || 0)
+  const capitale = (capital || 0) + (realized || 0) + dividendiIncassati
+  const daInvestire = capitale - totals.invested
+  const plOpen = totals.value - totals.invested // plus/minus non realizzata sui titoli aperti
 
   return (
-    <div className="px-4">
-      <header className="pt-3 pb-2 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Watchlist</h1>
-        {loadingSum && <span className="text-[11px] text-muted">analizzo…</span>}
-      </header>
-
-      <div className="grid grid-cols-1 gap-3 pb-safe">
-        {items.map(({ row, signals, sc }) => {
-          const yieldDec = row.summary?.yield ?? row.yield ?? null
-          const exDate = row.summary?.exDate ?? row.exDate ?? null
-          const days = exDate ? daysUntil(exDate) : null
-          const imp = news[row.symbol] || []
-          return (
-            <div key={row.symbol} className="bg-surface rounded-2xl border border-line p-3.5">
-              <div
-                onClick={() => onOpen(row.symbol)}
-                className="flex items-start justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <div className="font-semibold text-sm truncate">{row.name}</div>
-                  <div className="text-[11px] text-muted">{row.symbol.replace('.MI', '')}</div>
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-xl font-bold text-accent">{fmtPct(yieldDec, 2)}</span>
-                    <span className="text-xs text-muted">{fmtMoney(row.price, row.currency)}</span>
-                    {days != null && days >= 0 && (
-                      <span className="text-[11px] text-muted">· ex {fmtDays(days)}</span>
-                    )}
-                  </div>
-                </div>
-                <ScoreRing value={sc} />
-              </div>
-
-              {signals.length > 0 && (
-                <div className="mt-3">
-                  <SignalBadges signals={signals} />
-                </div>
-              )}
-
-              {imp.length > 0 && (
-                <div className="mt-3 border-t border-line pt-2">
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted uppercase tracking-wide mb-1.5">
-                    <Icon name="bell" size={13} /> News rilevanti
-                  </div>
-                  <div className="space-y-1">
-                    {imp.map((n, i) => (
-                      <a
-                        key={i}
-                        href={n.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block text-xs text-muted hover:text-accent leading-snug"
-                      >
-                        · {n.title}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
+    <div className="grid grid-cols-1 gap-3 pb-safe">
+      {/* riepilogo capitale */}
+      <div className="bg-surface rounded-2xl border border-line p-3.5">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted">capitale totale</div>
+            <div className="text-2xl font-extrabold mt-0.5">{fmtMoney(capitale, 'EUR', 2)}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-wider text-muted">da investire</div>
+            <div className={`text-lg font-extrabold mt-0.5 ${daInvestire >= 0 ? 'text-accent' : 'text-danger'}`}>
+              {fmtMoney(daInvestire, 'EUR', 2)}
             </div>
-          )
-        })}
+          </div>
+        </div>
+
+        <CapitalInput capital={capital} setCapital={setCapital} />
+
+        <div className="mt-2.5 pt-2.5 border-t border-line grid grid-cols-2 gap-y-1.5 text-[11px] text-muted">
+          <span>
+            investito <span className="text-ink font-semibold">{fmtMoney(totals.invested, 'EUR', 2)}</span>
+          </span>
+          <span className="text-right">
+            valore attuale <span className="text-ink font-semibold">{fmtMoney(totals.value, 'EUR', 2)}</span>
+          </span>
+          <span className={plOpen >= 0 ? 'text-pos' : 'text-danger'}>
+            non realizzato{' '}
+            <span className="font-semibold">
+              {plOpen >= 0 ? '+' : '−'}
+              {fmtMoney(Math.abs(plOpen), 'EUR', 2)}
+            </span>
+          </span>
+          <span className={`text-right ${(realized || 0) >= 0 ? 'text-pos' : 'text-danger'}`}>
+            realizzato{' '}
+            <span className="font-semibold">
+              {(realized || 0) >= 0 ? '+' : '−'}
+              {fmtMoney(Math.abs(realized || 0), 'EUR', 2)}
+            </span>
+          </span>
+          <span>
+            dividendi incassati{' '}
+            <span className="text-accent font-semibold">{fmtMoney(dividendiIncassati, 'EUR', 2)}</span> netti
+          </span>
+          <span className="text-right">
+            dividendi/anno{' '}
+            <span className="text-accent font-semibold">{fmtMoney(totals.divNet, 'EUR', 2)}</span> netti
+          </span>
+        </div>
       </div>
+
+      {owned.map(({ row, stats, days }) => (
+        <OwnedCard key={row.symbol} row={row} stats={stats} days={days} onOpen={onOpen} />
+      ))}
+    </div>
+  )
+}
+
+function OwnedCard({ row, stats, days, onOpen }) {
+  const exToday = days === 0
+  const exSoon = days != null && days > 0 && days <= 7
+  const up = stats?.plPct != null && stats.plPct >= 0
+
+  return (
+    <div
+      onClick={() => onOpen(row.symbol)}
+      className={`bg-surface rounded-2xl border p-3.5 ${exToday ? 'border-accent' : 'border-line'}`}
+    >
+      {/* evidenza ex-date: oggi stacca il dividendo */}
+      {exToday && (
+        <div className="mb-2.5 bg-accent-dim text-accent rounded-xl px-3 py-2 flex items-center gap-2 text-xs font-bold">
+          <Icon name="bell" size={14} />
+          <span>
+            Ex-date oggi: stacca il dividendo
+            {row.paymentDate ? ` · paga il ${fmtDate(row.paymentDate)}` : ''}
+          </span>
+        </div>
+      )}
+
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-semibold text-sm truncate">{row.name}</div>
+          <div className="text-[11px] text-muted">
+            {row.symbol.replace('.MI', '')}
+            {stats?.qty ? ` · ≈${fmtNum(stats.qty, 2)} az · ${fmtMoney(stats.invested, 'EUR', 2)} investiti` : ''}
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="text-sm font-bold">{fmtMoney(row.price, row.currency)}</div>
+          {stats?.plPct != null && (
+            <div
+              className={`flex items-center justify-end gap-1 mt-0.5 text-xs font-bold ${
+                up ? 'text-pos' : 'text-danger'
+              }`}
+            >
+              <Icon name={up ? 'triUp' : 'triDn'} size={11} />
+              {fmtPctNum(Math.abs(stats.plPct), 2)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {stats && (
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+          <MiniStat
+            label="guadagno"
+            value={stats.pl != null ? fmtMoney(stats.pl, row.currency, 2) : '—'}
+            tone={stats.pl == null ? undefined : stats.pl >= 0 ? 'pos' : 'neg'}
+          />
+          <MiniStat
+            label="div. netti/anno"
+            value={stats.divNet != null ? fmtMoney(stats.divNet, row.currency, 2) : '—'}
+            tone="accent"
+          />
+          <MiniStat
+            label="yield sul carico"
+            value={stats.yoc != null ? fmtPctNum(stats.yoc, 1) : '—'}
+          />
+        </div>
+      )}
+
+      {(exSoon || (days != null && days > 7) || row.paymentDate || stats?.nextPayoutNet != null) && (
+        <div className="mt-3 pt-2.5 border-t border-line flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-semibold">
+          {days != null && days > 0 && (
+            <span className={`flex items-center gap-1.5 ${exSoon ? 'text-warn' : 'text-muted'}`}>
+              <Icon name="clock" size={13} strokeWidth={1.7} />
+              ex {fmtDays(days)}
+            </span>
+          )}
+          {row.paymentDate && (
+            <span className="text-muted">paga il {fmtDate(row.paymentDate)}</span>
+          )}
+          {stats?.nextPayoutNet != null && (
+            <span className="text-accent">
+              prossimo div. ~{fmtMoney(stats.nextPayoutNet, row.currency, 2)} netti
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Campo per immettere il capitale di partenza (resta fisso, lo cambi solo tu). Salva mentre scrivi.
+// Si risincronizza col valore salvato quando non lo stai modificando (es. dopo la migrazione).
+function CapitalInput({ capital, setCapital }) {
+  const fmt = (c) => (c ? String(c).replace('.', ',') : '')
+  const [val, setVal] = useState(() => fmt(capital))
+  const [editing, setEditing] = useState(false)
+  useEffect(() => {
+    if (!editing) setVal(fmt(capital))
+  }, [capital, editing])
+  return (
+    <label className="block mt-2.5">
+      <span className="text-[10px] uppercase tracking-wide text-muted">Capitale immesso (€)</span>
+      <input
+        value={val}
+        onFocus={() => setEditing(true)}
+        onBlur={() => setEditing(false)}
+        onChange={(e) => {
+          setVal(e.target.value)
+          const n = parseDecimal(e.target.value)
+          setCapital(n != null ? n : 0)
+        }}
+        inputMode="decimal"
+        placeholder="es. 6000"
+        className="mt-1 w-full bg-surface2 border border-line rounded-xl px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+      />
+    </label>
+  )
+}
+
+function MiniStat({ label, value, tone }) {
+  const color =
+    tone === 'pos' ? 'text-pos' : tone === 'neg' ? 'text-danger' : tone === 'accent' ? 'text-accent' : 'text-ink'
+  return (
+    <div className="bg-surface2 rounded-xl px-2 py-2">
+      <div className={`text-[13px] font-bold ${color}`}>{value}</div>
+      <div className="text-[9px] uppercase tracking-wide text-muted mt-0.5">{label}</div>
     </div>
   )
 }
