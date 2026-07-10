@@ -171,6 +171,16 @@ export function Store({ children }) {
     [summaries]
   )
 
+  // Precarica il summary dei titoli POSSEDUTI: contiene il prezzo corrente (fonte
+  // affidabile) che serve al P/L "Guadagno/Perdita" anche in watchlist/portfolio,
+  // dove il dettaglio (e quindi il summary) non è stato aperto. v7/quote a volte
+  // omette le small-cap .MI -> senza questo il loro P/L resterebbe vuoto.
+  const ownedKey = Object.keys(portfolio).sort().join(',')
+  useEffect(() => {
+    for (const sym of Object.keys(portfolio)) loadSummary(sym)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownedKey])
+
   const toggleWatch = useCallback(
     (sym) => setWatch((w) => (w.includes(sym) ? w.filter((x) => x !== sym) : [...w, sym])),
     []
@@ -220,6 +230,11 @@ export function Store({ children }) {
         return {
           ...u,
           ...q,
+          // prezzo/range: se /api/quotes (v7) non li dà, ripiega sul summary
+          // (quoteSummary, affidabile) — così il P/L "Guadagno/Perdita" si calcola sempre.
+          price: q.price ?? s?.price ?? null,
+          high52: q.high52 ?? s?.high52 ?? null,
+          low52: q.low52 ?? s?.low52 ?? null,
           yield: s?.yield ?? d.yield ?? q.yield ?? null,
           dividendRate: s?.dividendRate ?? d.dividendRate ?? q.dividendRate ?? null, // € per azione/anno
           exDate: s?.exDate ?? d.exDate ?? null, // solo forward (no campo trailing inaffidabile)
