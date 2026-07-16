@@ -1,4 +1,4 @@
-import { fetchQuotes, json } from '../lib/yahoo.js'
+import { fetchQuotes, quoteFromChart, json } from '../lib/yahoo.js'
 
 // GET /api/quotes?symbols=ENI.MI,ISP.MI,...
 // Batch quote per la lista: prezzo, medie 50/200gg, 52 sett, yield trailing, market cap.
@@ -16,12 +16,19 @@ export async function onRequestGet(context) {
   if (hit) return hit
 
   const raw = await fetchQuotes(symbols)
+
+  // v7/quote (richiede crumb) bloccato da Yahoo per gli IP Cloudflare: ricostruisce
+  // le quote dalla chart v8 (senza crumb, affidabile). Cache breve: dati di ripiego.
+  if (!Object.keys(raw).length) {
+    const fb = await Promise.all(symbols.map((sym) => quoteFromChart(sym)))
+    const result = symbols.map((sym, i) => fb[i] || { symbol: sym, missing: true })
+    if (result.every((r) => r.missing)) return json(result, 0) // Yahoo del tutto giù: niente cache
+    const res = json(result, 300)
+    context.waitUntil(cache.put(cacheKey, res.clone()))
+    return res
+  }
+
   const result = symbols.map((sym) => mapQuote(sym, raw[sym]))
-
-  // Yahoo giù/rate-limited in quel momento: niente cache (edge né browser),
-  // altrimenti la risposta vuota resterebbe servita per 10 min ("n/d" ovunque).
-  if (!Object.keys(raw).length) return json(result, 0)
-
   const res = json(result, 600) // fresco 10 min
   context.waitUntil(cache.put(cacheKey, res.clone()))
   return res

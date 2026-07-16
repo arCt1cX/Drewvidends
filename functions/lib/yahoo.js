@@ -186,8 +186,18 @@ export function sanitizeExDate(exDate, history) {
   return exDate
 }
 
+// Somma dei dividendi staccati negli ultimi 12 mesi (dividendo trailing per azione).
+export function trailingRate(history) {
+  const yearAgo = Date.now() / 1000 - 365 * 86400
+  return history
+    .filter((h) => h.date >= yearAgo)
+    .reduce((a, h) => a + (h.amount || 0), 0)
+}
+
 // quoteSummary per dati dividendo in blocco: usata da /api/divinfo. Affianca una
 // chart leggera (solo eventi dividendo) per validare la ex-date forward con lo storico.
+// Se quoteSummary è bloccato da Yahoo (richiede crumb, spesso negato agli IP
+// Cloudflare) ripiega sui soli dati chart: yield/rate trailing, niente ex-date forward.
 export async function fetchDivInfo(symbol) {
   const [data, chart] = await Promise.all([
     authedJson(
@@ -199,13 +209,28 @@ export async function fetchDivInfo(symbol) {
     ),
     fetchChart(symbol, '3y', '1mo')
   ])
+  const history = (chart?.events?.dividends ? Object.values(chart.events.dividends) : [])
+    .map((d) => ({ date: d.date, amount: d.amount }))
+    .sort((a, b) => a.date - b.date)
+
   const r = data?.quoteSummary?.result?.[0]
-  if (!r) return null
+  if (!r) {
+    if (!chart) return null
+    const price = chart.meta?.regularMarketPrice ?? null
+    const rate = trailingRate(history)
+    return {
+      yield: price && rate ? rate / price : null,
+      dividendRate: rate || null,
+      exDate: null,
+      payoutRatio: null,
+      fiveYearAvgYield: null,
+      paymentDate: null,
+      approx: true // dato di ripiego: l'endpoint lo cachea poco
+    }
+  }
+
   const sd = r.summaryDetail || {}
   const ce = r.calendarEvents || {}
-  const history = (chart?.events?.dividends ? Object.values(chart.events.dividends) : [])
-    .map((d) => ({ date: d.date }))
-    .sort((a, b) => a.date - b.date)
   const rawEx = sd.exDividendDate?.raw ?? ce?.dividend?.exDate?.raw ?? null
   return {
     yield: sd.dividendYield?.raw ?? null,
@@ -214,6 +239,49 @@ export async function fetchDivInfo(symbol) {
     payoutRatio: sd.payoutRatio?.raw ?? null,
     fiveYearAvgYield: sd.fiveYearAvgDividendYield?.raw ?? null,
     paymentDate: ce?.dividendDate?.raw ?? null
+  }
+}
+
+// Ricostruisce una "quote" dalla sola chart v8 (niente crumb): ripiego quando
+// v7/quote è bloccato da Yahoo. Un anno di chiusure basta per ma50/ma200/52sett,
+// gli eventi dividendo per il trailing yield.
+export async function quoteFromChart(sym) {
+  try {
+    const c = await fetchChart(sym, '1y', '1d')
+    const meta = c?.meta
+    if (!meta) return null
+    const ts = c.timestamp || []
+    const rawClose = c.indicators?.quote?.[0]?.close || []
+    const pairs = ts.map((t, i) => ({ t, close: rawClose[i] })).filter((p) => p.close != null)
+    const closes = pairs.map((p) => p.close)
+    const price = meta.regularMarketPrice ?? (closes.length ? closes[closes.length - 1] : null)
+    // variazione di giornata: stessa logica di /api/market
+    const sameDay = (a, b) =>
+      new Date(a * 1000).toDateString() === new Date(b * 1000).toDateString()
+    const lastIsToday =
+      meta.regularMarketTime && pairs.length && sameDay(pairs[pairs.length - 1].t, meta.regularMarketTime)
+    const prev = lastIsToday ? closes[closes.length - 2] : closes[closes.length - 1]
+    const ma = (n) =>
+      closes.length >= n ? closes.slice(-n).reduce((a, b) => a + b, 0) / n : null
+    const divs = c.events?.dividends ? Object.values(c.events.dividends) : []
+    const rate = trailingRate(divs)
+    return {
+      symbol: sym,
+      name: meta.longName || meta.shortName || sym,
+      price,
+      currency: meta.currency || 'EUR',
+      changePct: price != null && prev ? ((price - prev) / prev) * 100 : null,
+      ma50: ma(50),
+      ma200: ma(200),
+      high52: meta.fiftyTwoWeekHigh ?? (closes.length ? Math.max(...closes) : null),
+      low52: meta.fiftyTwoWeekLow ?? (closes.length ? Math.min(...closes) : null),
+      marketCap: null,
+      yield: price && rate ? rate / price : null,
+      dividendRate: rate || null,
+      exDate: null
+    }
+  } catch {
+    return null
   }
 }
 

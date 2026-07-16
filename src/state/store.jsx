@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import universe from '../data/universe.json'
 import { api } from '../lib/api.js'
 import { load, save } from '../lib/storage.js'
@@ -54,10 +54,12 @@ export function Store({ children }) {
     setLoading(true)
     setError(null)
     try {
-      // Blocchi da 50 IN PARALLELO: i prezzi appaiono man mano che i blocchi
+      // Blocchi da 40 IN PARALLELO: i prezzi appaiono man mano che i blocchi
       // rispondono, invece di aspettare l'intero universo (~400 titoli) in un colpo.
+      // 40 (non 50): se v7/quote è bloccato il server ripiega su una chart per
+      // simbolo, e Workers limita le subrequest per richiesta.
       const list = universe.map((u) => u.symbol)
-      const chunk = 50
+      const chunk = 40
       const jobs = []
       for (let i = 0; i < list.length; i += chunk) {
         const part = list.slice(i, i + chunk)
@@ -172,19 +174,30 @@ export function Store({ children }) {
   useEffect(() => save('dv_realized', realized), [realized])
   useEffect(() => save('dv_realized_div', realizedDiv), [realizedDiv])
 
-  const loadSummary = useCallback(
-    async (symbol) => {
-      if (summaries[symbol]) return summaries[symbol]
+  // Cache locale dei summary con dedup e memoria dei fallimenti. Identità STABILE
+  // (deps []): se dipendesse da `summaries`, ogni summary caricato cambierebbe la
+  // funzione -> gli effect delle pagine si ri-attiverebbero -> i simboli falliti
+  // verrebbero richiesti a raffica (tempesta di 502 in console).
+  const sumCache = useRef({}) // symbol -> { data } | { promise } | { failedAt }
+  const loadSummary = useCallback(async (symbol) => {
+    const c = sumCache.current[symbol]
+    if (c?.data) return c.data
+    if (c?.promise) return c.promise // già in volo: riusa la stessa richiesta
+    if (c?.failedAt && Date.now() - c.failedAt < 2 * 60 * 1000) return null // niente retry per 2 min
+    const promise = (async () => {
       try {
         const s = await api.summary(symbol)
+        sumCache.current[symbol] = { data: s }
         setSummaries((p) => ({ ...p, [symbol]: s }))
         return s
       } catch {
+        sumCache.current[symbol] = { failedAt: Date.now() }
         return null
       }
-    },
-    [summaries]
-  )
+    })()
+    sumCache.current[symbol] = { promise }
+    return promise
+  }, [])
 
   // Precarica il summary dei titoli POSSEDUTI: contiene il prezzo corrente (fonte
   // affidabile) che serve al P/L "Guadagno/Perdita" anche in watchlist/portfolio,
