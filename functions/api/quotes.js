@@ -18,6 +18,10 @@ export async function onRequestGet(context) {
   const raw = await fetchQuotes(symbols)
   const result = symbols.map((sym) => mapQuote(sym, raw[sym]))
 
+  // Yahoo giù/rate-limited in quel momento: niente cache (edge né browser),
+  // altrimenti la risposta vuota resterebbe servita per 10 min ("n/d" ovunque).
+  if (!Object.keys(raw).length) return json(result, 0)
+
   const res = json(result, 600) // fresco 10 min
   context.waitUntil(cache.put(cacheKey, res.clone()))
   return res

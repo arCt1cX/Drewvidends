@@ -14,8 +14,12 @@ export const api = {
         encodeURIComponent(symbols.join(',')) +
         (fresh ? '&t=' + Date.now() : '')
     ),
-  divinfo: (symbols) =>
-    getJson('/api/divinfo?symbols=' + encodeURIComponent(symbols.join(','))),
+  divinfo: (symbols, fresh = false) =>
+    getJson(
+      '/api/divinfo?symbols=' +
+        encodeURIComponent(symbols.join(',')) +
+        (fresh ? '&t=' + Date.now() : '')
+    ),
   spark: (symbols) =>
     getJson('/api/spark?symbols=' + encodeURIComponent(symbols.join(','))),
   market: () => getJson('/api/market'),

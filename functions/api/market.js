@@ -48,7 +48,8 @@ export async function onRequestGet(context) {
     /* rete/Yahoo giù: torna null, la barra riproverà al refresh */
   }
 
-  const res = json(out, 600) // fresco 10 min
+  // out null (Yahoo giù): maxAge 0 così nemmeno il browser cachea la risposta vuota
+  const res = json(out, out ? 600 : 0) // fresco 10 min
   if (out) context.waitUntil(cache.put(cacheKey, res.clone()))
   return res
 }

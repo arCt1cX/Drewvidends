@@ -53,18 +53,23 @@ async function getAuth(force = false) {
   return authInFlight
 }
 
-// fetch JSON con auth; ritenta una volta rinfrescando il crumb se scade.
+// fetch JSON con auth; ritenta rinfrescando il crumb se scade e con una breve
+// attesa se Yahoo rate-limita (429) o ha un errore transitorio (5xx).
 async function authedJson(buildUrl) {
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const { cookie, crumb } = await getAuth(attempt === 1)
+      const { cookie, crumb } = await getAuth(attempt > 0)
       const url = buildUrl(crumb)
       const res = await fetch(url, { headers: { 'User-Agent': UA, Cookie: cookie } })
+      if (res.status === 429 || res.status >= 500) {
+        await new Promise((r) => setTimeout(r, 350 * (attempt + 1)))
+        continue
+      }
       const txt = await res.text()
       if (res.status === 401 || res.status === 403 || /Invalid Crumb|Unauthorized/i.test(txt)) continue
       return JSON.parse(txt)
     } catch {
-      // errore rete / JSON malformato: ritenta una volta rinfrescando l'auth
+      // errore rete / JSON malformato: ritenta rinfrescando l'auth
     }
   }
   return null
@@ -105,15 +110,23 @@ export async function fetchSummary(symbol) {
 }
 
 // chart (v8): storico prezzi + storico dividendi. Non richiede crumb.
+// Un retry con attesa se Yahoo rate-limita (429) o ha un errore transitorio (5xx).
 export async function fetchChart(symbol, range = '1y', interval = '1d') {
   const url =
     'https://query1.finance.yahoo.com/v8/finance/chart/' +
     encodeURIComponent(symbol) +
     `?range=${range}&interval=${interval}&events=div`
-  const res = await fetch(url, { headers: { 'User-Agent': UA } })
-  if (!res.ok) return null
-  const data = await res.json()
-  return data?.chart?.result?.[0] || null
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(url, { headers: { 'User-Agent': UA } })
+    if (res.status === 429 || res.status >= 500) {
+      await new Promise((r) => setTimeout(r, 400))
+      continue
+    }
+    if (!res.ok) return null
+    const data = await res.json()
+    return data?.chart?.result?.[0] || null
+  }
+  return null
 }
 
 // search (v1): news + corrispondenze. Usato per le notizie della watchlist.

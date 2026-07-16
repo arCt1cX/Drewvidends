@@ -26,7 +26,9 @@ export async function onRequestGet(context) {
   if (hit) return hit
 
   const data = await fetchHistory(symbol, range, interval)
-  const res = json(data || { points: [] }, 1800) // 30 min
+  if (!data) return json({ points: [] }, 0) // Yahoo giù: non cacheare il grafico vuoto
+
+  const res = json(data, 1800) // 30 min
   context.waitUntil(cache.put(cacheKey, res.clone()))
   return res
 }

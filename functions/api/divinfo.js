@@ -31,6 +31,12 @@ export async function onRequestGet(context) {
   const out = {}
   for (const [sym, info] of results) if (info) out[sym] = info
 
+  // fetchDivInfo ritorna null solo se la chiamata Yahoo è FALLITA (un titolo senza
+  // dividendi risponde comunque, con campi null). Se manca anche un solo simbolo la
+  // risposta è incompleta per colpa di Yahoo: serviamola ma NON cachearla per 1h,
+  // altrimenti quei titoli restano "sconosciuti" finché la cache non scade.
+  if (Object.keys(out).length < symbols.length) return json(out, 0)
+
   const res = json(out, 3600) // 1h
   context.waitUntil(cache.put(cacheKey, res.clone()))
   return res

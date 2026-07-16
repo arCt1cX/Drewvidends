@@ -62,7 +62,14 @@ export function Store({ children }) {
       for (let i = 0; i < list.length; i += chunk) {
         const part = list.slice(i, i + chunk)
         jobs.push(
-          api.quotes(part, fresh).then((data) => {
+          api.quotes(part, fresh).then(async (data) => {
+            // blocco interamente "missing" = Yahoo era giù in quel momento (o una
+            // vecchia risposta vuota in cache): riprova una volta bypassando le cache
+            if (data.length && data.every((q) => q.missing)) {
+              try {
+                data = await api.quotes(part, true)
+              } catch { /* tiene il blocco missing: refresh manuale lo ritenterà */ }
+            }
             setQuotes((prev) => {
               const next = { ...prev }
               for (const q of data) next[q.symbol] = q
@@ -96,7 +103,15 @@ export function Store({ children }) {
       for (let i = 0; i < all.length && alive; i += chunk) {
         const part = all.slice(i, i + chunk)
         try {
-          const map = await api.divinfo(part)
+          let map = await api.divinfo(part)
+          // blocco incompleto = Yahoo ha rate-limitato qualche chiamata (o cache
+          // sporca): riprova una volta bypassando le cache prima di arrendersi
+          if (Object.keys(map).length < part.length) {
+            try {
+              const retry = await api.divinfo(part, true)
+              map = { ...map, ...retry }
+            } catch { /* tiene il parziale */ }
+          }
           if (!alive) return
           setDivinfo((p) => ({ ...p, ...map }))
         } catch {

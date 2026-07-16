@@ -17,6 +17,15 @@ export async function onRequestGet(context) {
     fetchChart(symbol, '5y', '1mo')
   ])
 
+  // quoteSummary fallito (Yahoo giù/rate-limited): 502 senza cache, così il client
+  // ripiega su divinfo/quote e ritenta più tardi invece di mostrare "n/d" per 1h.
+  if (!s) {
+    return new Response(JSON.stringify({ error: 'yahoo unavailable' }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
+    })
+  }
+
   const sd = s?.summaryDetail || {}
   const ce = s?.calendarEvents || {}
   const pr = s?.price || {}
