@@ -165,10 +165,15 @@ export async function fetchSpark(symbols, range = '1mo', interval = '1d') {
 // Dopo lo stacco Yahoo a volte rimette in exDividendDate una STIMA ingenua
 // (ultimo stacco + ~1 mese): sbagliata per chi paga ogni 6/12 mesi. Es. Poste
 // Italiane (stacco saldo a giugno, acconto a novembre) finiva col mostrare una
-// finta cedola "a luglio". Con lo storico verifichiamo che la prossima ex-date
-// cada DOPO l'ultimo stacco e ad almeno ~metà dell'intervallo tipico tra cedole.
-// history: array di { date } (epoch sec) degli stacchi passati. Senza dati
-// sufficienti per giudicare, ci si fida del valore Yahoo.
+// finta cedola "a luglio".
+// Il filtro è volutamente STRETTO: scarta solo l'artefatto "+1 mese" (data entro
+// ~45gg dall'ultimo stacco per chi normalmente paga ogni 4 mesi o più). Una regola
+// più larga buttava via anche cedole vere ravvicinate (acconti/extra annunciati),
+// svuotando il calendario. Nel dubbio si tiene il dato di Yahoo.
+// history: array di { date } (epoch sec) degli stacchi passati.
+const ARTIFACT_WINDOW = 45 * 86400 // "+1 mese" di Yahoo, con margine
+const SPARSE_CADENCE = 120 * 86400 // sotto questa cadenza pagare presto è normale
+
 export function sanitizeExDate(exDate, history) {
   if (!exDate) return null
   const dates = (Array.isArray(history) ? history : [])
@@ -182,7 +187,8 @@ export function sanitizeExDate(exDate, history) {
   for (let i = 1; i < dates.length; i++) gaps.push(dates[i] - dates[i - 1])
   gaps.sort((a, b) => a - b)
   const median = gaps[Math.floor(gaps.length / 2)]
-  if (exDate - last < median * 0.5) return null // troppo vicino: stima fasulla "+1 mese"
+  // sospetta solo se cade subito dopo lo stacco E il titolo non paga così di frequente
+  if (exDate - last <= ARTIFACT_WINDOW && median >= SPARSE_CADENCE) return null
   return exDate
 }
 
