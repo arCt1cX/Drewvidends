@@ -4,7 +4,7 @@ import { fmtPct, fmtMoney, fmtDate, fmtDays, daysUntil } from '../lib/format.js'
 import Icon from '../components/Icon.jsx'
 
 export default function CalendarPage({ onOpen }) {
-  const { rows, isWatched, divProgress } = useStore()
+  const { rows, isWatched, divProgress, divFailed, divChunks, reloadDivinfo } = useStore()
   const [onlyWatch, setOnlyWatch] = useState(false)
 
   const groups = useMemo(() => {
@@ -44,12 +44,48 @@ export default function CalendarPage({ onOpen }) {
         </button>
       </header>
 
+      {/* Elenco parziale: alcuni blocchi non hanno risposto, quindi mancano dei titoli.
+          Senza questo avviso la lista sembra completa e non lo è. */}
+      {divProgress >= 1 && divFailed > 0 && groups.length > 0 && (
+        <div className="mb-3 rounded-xl border border-danger/40 bg-danger/10 px-3 py-2">
+          <p className="text-[11px] text-danger font-semibold">
+            Elenco incompleto: {divFailed * 20} titoli su {divChunks * 20} non caricati.
+          </p>
+          <button onClick={reloadDivinfo} className="mt-1 text-[11px] font-bold text-accent underline">
+            Ricarica le ex-date
+          </button>
+        </div>
+      )}
+
       {groups.length === 0 ? (
-        <p className="text-sm text-muted pt-6 text-center">
-          {divProgress < 1
-            ? `Carico le ex-date… ${Math.round(divProgress * 100)}%`
-            : 'Nessuna ex-date imminente trovata.'}
-        </p>
+        <div className="pt-6 text-center space-y-2">
+          {divProgress < 1 ? (
+            <p className="text-sm text-muted">Carico le ex-date… {Math.round(divProgress * 100)}%</p>
+          ) : divFailed > 0 ? (
+            <>
+              <p className="text-sm text-danger font-semibold">
+                Ex-date non caricate: {divFailed} blocchi su {divChunks} non hanno risposto.
+              </p>
+              <p className="text-[11px] text-muted px-6">
+                Non vuol dire che non ci sono stacchi: vuol dire che i dati non sono arrivati.
+              </p>
+              <button
+                onClick={reloadDivinfo}
+                className="mt-1 text-xs font-bold rounded-xl px-4 py-2 bg-accent-dim text-accent"
+              >
+                Riprova
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted">Nessuna ex-date annunciata nei prossimi 6 mesi.</p>
+              <p className="text-[11px] text-muted px-6">
+                Dati caricati correttamente su {divChunks * 20} titoli. Yahoo pubblica la data solo
+                dopo l’annuncio ufficiale della società.
+              </p>
+            </>
+          )}
+        </div>
       ) : (
         <div className="space-y-4 pb-safe">
           {groups.map(([month, items]) => (

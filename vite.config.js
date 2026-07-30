@@ -22,19 +22,14 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // non cacheare /api: i dati di mercato devono restare freschi
-        navigateFallbackDenylist: [/^\/api\//],
-        runtimeCaching: [
-          {
-            urlPattern: /^https?:\/\/[^/]+\/api\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 30 },
-              networkTimeoutSeconds: 8
-            }
-          }
-        ]
+        // /api NON passa dal service worker. Prima c'era un NetworkFirst con
+        // networkTimeoutSeconds: 8 — e quella era una ghigliottina: /api/divinfo
+        // interroga Yahoo 40 volte per blocco, quindi su rete mobile supera
+        // facilmente gli 8s. Al timeout workbox annullava la richiesta e, senza
+        // copia in cache, la rigettava: l'app perdeva 20 titoli per volta in
+        // silenzio e il calendario si svuotava. Le risposte sono già cachate
+        // all'edge Cloudflare (Cache-Control), qui non serve un secondo livello.
+        navigateFallbackDenylist: [/^\/api\//]
       }
     })
   ],

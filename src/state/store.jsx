@@ -15,6 +15,12 @@ export function Store({ children }) {
   const [summaries, setSummaries] = useState({}) // symbol -> dettaglio completo
   const [loading, setLoading] = useState(true)
   const [divProgress, setDivProgress] = useState(0) // 0..1 caricamento ex-date in background
+  // Blocchi di ex-date andati persi. Vanno CONTATI: prima il catch li ingoiava e
+  // divProgress arrivava lo stesso al 100%, quindi "tutte le chiamate fallite" e
+  // "nessuno stacco annunciato" finivano nella stessa identica schermata.
+  const [divFailed, setDivFailed] = useState(0)
+  const [divChunks, setDivChunks] = useState(0)
+  const [divReload, setDivReload] = useState(0) // incrementato dal pulsante "Riprova"
   const [error, setError] = useState(null)
 
   const [watch, setWatch] = useState(() => load('dv_watch', []))
@@ -99,13 +105,19 @@ export function Store({ children }) {
   // Senza questo, ex-date/calendario sbagliati.
   useEffect(() => {
     let alive = true
+    setDivProgress(0)
+    setDivFailed(0)
     ;(async () => {
       const all = universe.map((u) => u.symbol)
       const chunk = 20
+      setDivChunks(Math.ceil(all.length / chunk))
+      let failed = 0
       for (let i = 0; i < all.length && alive; i += chunk) {
         const part = all.slice(i, i + chunk)
         try {
-          let map = await api.divinfo(part)
+          // dopo un "Riprova" si bypassano le cache: il problema tipico è una
+          // risposta vecchia o parziale rimasta appiccicata
+          let map = await api.divinfo(part, divReload > 0)
           // blocco incompleto = Yahoo ha rate-limitato qualche chiamata (o cache
           // sporca): riprova una volta bypassando le cache prima di arrendersi
           if (Object.keys(map).length < part.length) {
@@ -117,7 +129,9 @@ export function Store({ children }) {
           if (!alive) return
           setDivinfo((p) => ({ ...p, ...map }))
         } catch {
-          /* salta il blocco fallito */
+          // blocco perso: 20 titoli spariscono dal calendario. Va reso visibile.
+          failed++
+          if (alive) setDivFailed(failed)
         }
         setDivProgress(Math.min(1, (i + chunk) / all.length))
       }
@@ -126,7 +140,7 @@ export function Store({ children }) {
     return () => {
       alive = false
     }
-  }, [])
+  }, [divReload])
 
   // Dati indice FTSE MIB (variazione oggi + serie 1 mese) per il confronto "vs mercato".
   useEffect(() => {
@@ -214,6 +228,7 @@ export function Store({ children }) {
     []
   )
   const isWatched = useCallback((sym) => watch.includes(sym), [watch])
+  const reloadDivinfo = useCallback(() => setDivReload((n) => n + 1), [])
   const setNote = useCallback((sym, txt) => setNotes((n) => ({ ...n, [sym]: txt })), [])
 
   // Acquisti: dati della posizione per i "titoli comprati". Alla prima spunta
@@ -283,6 +298,9 @@ export function Store({ children }) {
     index,
     loading,
     divProgress,
+    divFailed,
+    divChunks,
+    reloadDivinfo,
     error,
     refresh,
     loadSummary,
