@@ -5,6 +5,7 @@ import ListPage from './pages/ListPage.jsx'
 import WatchlistPage from './pages/WatchlistPage.jsx'
 import ComparePage from './pages/ComparePage.jsx'
 import CalendarPage from './pages/CalendarPage.jsx'
+import DropsPage from './pages/DropsPage.jsx'
 
 export default function App() {
   const [tab, setTab] = useState('list')
@@ -37,6 +38,9 @@ export default function App() {
       </div>
       <div className={show('calendar')}>
         <CalendarPage onOpen={onOpen} />
+      </div>
+      <div className={show('drops')}>
+        <DropsPage onOpen={onOpen} />
       </div>
 
       <TabBar tab={tab} setTab={changeTab} />

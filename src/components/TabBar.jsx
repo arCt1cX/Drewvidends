@@ -4,13 +4,14 @@ const TABS = [
   { id: 'list', label: 'Lista', icon: 'list' },
   { id: 'watch', label: 'Watchlist', icon: 'star' },
   { id: 'compare', label: 'Confronto', icon: 'compare' },
-  { id: 'calendar', label: 'Calendario', icon: 'calendar' }
+  { id: 'calendar', label: 'Calendario', icon: 'calendar' },
+  { id: 'drops', label: 'Ribassi', icon: 'trendDown' }
 ]
 
 export default function TabBar({ tab, setTab }) {
   return (
     <nav className="fixed bottom-0 inset-x-0 z-30 bg-surface/95 backdrop-blur border-t border-line tabbar-safe">
-      <div className="max-w-screen-sm mx-auto grid grid-cols-4">
+      <div className="max-w-screen-sm mx-auto grid grid-cols-5">
         {TABS.map((t) => {
           const active = tab === t.id
           const name = active && t.icon === 'star' ? 'starFill' : t.icon

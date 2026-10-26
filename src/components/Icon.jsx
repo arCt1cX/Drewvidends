@@ -47,6 +47,12 @@ const PATHS = {
       <circle cx="15.8" cy="13.5" r="0.6" fill="currentColor" stroke="none" />
     </>
   ),
+  trendDown: (p) => (
+    <>
+      <path {...p} d="M3 7l6 6 4-4 8 8" />
+      <path {...p} d="M15 17h6v-6" />
+    </>
+  ),
   search: (p) => (
     <>
       <circle cx="11" cy="11" r="6.4" {...p} />
