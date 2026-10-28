@@ -17,6 +17,9 @@ const BANDS = [
   { id: '25+', label: 'oltre 25%', min: 25, max: null }
 ]
 
+// Prezzo minimo per azione: i titoli da pochi centesimi sono quasi sempre rumore.
+const MIN_PRICES = [0, 1, 2, 5, 10, 20]
+
 const inBand = (drop, b) => drop > b.min && (b.max == null || drop <= b.max)
 
 // Variazione % a 1 settimana dalle chiusure giornaliere della sparkline (~1 mese):
@@ -33,6 +36,7 @@ export default function DropsPage({ onOpen }) {
   const { rows, isWatched } = useStore()
   const [band, setBand] = useState('all')
   const [onlyPopular, setOnlyPopular] = useState(false)
+  const [minPrice, setMinPrice] = useState(0)
 
   // tutti i titoli in calo nell'ultima settimana, dal calo più forte
   const drops = useMemo(
@@ -44,8 +48,9 @@ export default function DropsPage({ onOpen }) {
         })
         .filter(Boolean)
         .filter((r) => (onlyPopular ? r.marketCap >= POPULAR_MIN : true))
+        .filter((r) => (minPrice ? r.price >= minPrice : true))
         .sort((a, b) => b.drop - a.drop),
-    [rows, onlyPopular]
+    [rows, onlyPopular, minPrice]
   )
 
   const counts = useMemo(() => {
@@ -75,6 +80,19 @@ export default function DropsPage({ onOpen }) {
           >
             Popolari
           </button>
+          <select
+            value={minPrice}
+            onChange={(e) => setMinPrice(Number(e.target.value))}
+            className={`h-8 px-3.5 rounded-xl text-[12.5px] font-semibold shrink-0 border ${
+              minPrice ? 'bg-accent-dim text-accent border-transparent' : 'bg-surface text-muted border-line'
+            }`}
+          >
+            {MIN_PRICES.map((v) => (
+              <option key={v} value={v}>
+                {v ? `Prezzo > ${v} €` : 'Prezzo: tutti'}
+              </option>
+            ))}
+          </select>
           {BANDS.map((b) => {
             const active = band === b.id
             return (
