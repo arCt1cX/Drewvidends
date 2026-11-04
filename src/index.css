@@ -46,3 +46,18 @@ body {
 .tabbar-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* <input type="date"> su iOS Safari ha una larghezza minima intrinseca che ignora
+   width:100% e sfora a destra (la scheda titolo si muoveva di lato). Lo forzo nel box. */
+.date-input {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.75rem;
+  text-align: left;
+}
+.date-input::-webkit-date-and-time-value {
+  text-align: left;
+}

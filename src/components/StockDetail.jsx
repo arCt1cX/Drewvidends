@@ -56,7 +56,7 @@ export default function StockDetail({ symbol, onClose }) {
 
   return (
     <div className="fixed inset-0 z-40 bg-black/60 flex items-end sm:items-center justify-center">
-      <div className="bg-bg w-full max-w-screen-sm max-h-[92vh] rounded-t-3xl sm:rounded-3xl border-t sm:border border-line overflow-y-auto">
+      <div className="bg-bg w-full max-w-screen-sm max-h-[92vh] rounded-t-3xl sm:rounded-3xl border-t sm:border border-line overflow-y-auto overflow-x-hidden overscroll-x-none">
         {/* header */}
         <div className="sticky top-0 bg-bg/95 backdrop-blur px-4 py-3 flex items-center justify-between border-b border-line z-10">
           <div className="min-w-0">
@@ -277,7 +277,7 @@ function HoldingEditor({ row, holding, onSave }) {
 
   return (
     <div className="space-y-2.5">
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5 items-end">
         <label className="block">
           <span className="text-[10px] uppercase tracking-wide text-muted">Costo di 1 azione all’acquisto</span>
           <input
@@ -306,7 +306,7 @@ function HoldingEditor({ row, holding, onSave }) {
         </label>
       </div>
 
-      <label className="block">
+      <label className="block min-w-0">
         <span className="text-[10px] uppercase tracking-wide text-muted">Data di acquisto</span>
         <input
           type="date"
@@ -316,7 +316,7 @@ function HoldingEditor({ row, holding, onSave }) {
             const t = fromDateInput(e.target.value)
             if (t) onSave({ boughtAt: t })
           }}
-          className={`${inputCls} [color-scheme:dark]`}
+          className={`${inputCls} date-input [color-scheme:dark]`}
         />
         {boughtAt && (
           <span className="block text-[11px] text-muted mt-1">
