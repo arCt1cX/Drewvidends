@@ -2,21 +2,27 @@ import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { api } from '../lib/api.js'
 import { computeSignals, score, isImportantNews } from '../lib/signals.js'
-import { fmtPct, fmtPctNum, fmtMoney, fmtNum, daysUntil, fmtDays, fmtDate } from '../lib/format.js'
+import { fmtPct, fmtPctNum, fmtMoney, fmtNum, daysUntil, fmtDays, fmtDate, fmtHeld } from '../lib/format.js'
 import { positionStats, accruedNetSince, parseDecimal } from '../lib/portfolio.js'
 import SignalBadges from '../components/SignalBadges.jsx'
 import Icon from '../components/Icon.jsx'
 
 export default function WatchlistPage({ onOpen }) {
-  const { rows, watch, loadSummary, summaries, portfolio, capital, realized, realizedDiv, setCapital } = useStore()
+  const {
+    rows, watch, loadSummary, summaries, portfolio, capital, realized, realizedDiv, setCapital,
+    folders, createFolder, renameFolder, deleteFolder
+  } = useStore()
   const [view, setView] = useState('watch') // 'watch' | 'owned'
-  const [news, setNews] = useState({}) // symbol -> [{title,link}]
+  const [folderId, setFolderId] = useState(null) // null = tutti i titoli
+  // se la cartella selezionata viene eliminata si torna su "Tutti"
+  const folder = folders.find((f) => f.id === folderId) || null
+    const [news, setNews] = useState({}) // symbol -> [{title,link}]
   const [loadingSum, setLoadingSum] = useState(false)
 
   // carica summary (segnali + storico dividendi) di watchlist E titoli comprati
   const allSyms = useMemo(
-    () => [...new Set([...watch, ...Object.keys(portfolio)])],
-    [watch, portfolio]
+    () => [...new Set([...watch, ...Object.keys(portfolio), ...folders.flatMap((f) => f.symbols)])],
+    [watch, portfolio, folders]
   )
   useEffect(() => {
     let alive = true
@@ -50,17 +56,19 @@ export default function WatchlistPage({ onOpen }) {
   }, [watch])
 
   const items = useMemo(() => {
-    return watch
+    // in una cartella mostro i suoi titoli, altrimenti tutta la watchlist
+    return (folder ? folder.symbols : watch)
       .map((sym) => rows.find((r) => r.symbol === sym))
       .filter(Boolean)
       .map((r) => ({ ...r, summary: summaries[r.symbol] || null }))
       .map((r) => ({ row: r, signals: computeSignals(r), sc: score(r) }))
       .sort((a, b) => b.sc - a.sc)
-  }, [watch, rows, summaries])
+  }, [watch, folder, rows, summaries])
 
   // titoli comprati: ordinati per ex-date più vicina (così vedo subito chi sta per staccare)
   const owned = useMemo(() => {
     return Object.keys(portfolio)
+      .filter((sym) => !folder || folder.symbols.includes(sym))
       .map((sym) => {
         const r = rows.find((x) => x.symbol === sym)
         if (!r) return null
@@ -76,7 +84,7 @@ export default function WatchlistPage({ onOpen }) {
         const db = b.days != null && b.days >= 0 ? b.days : Infinity
         return da - db
       })
-  }, [portfolio, rows, summaries])
+  }, [portfolio, folder, rows, summaries])
 
   // totali portafoglio (solo posizioni con quantità)
   const totals = useMemo(() => {
@@ -106,7 +114,9 @@ export default function WatchlistPage({ onOpen }) {
     <div className="px-4">
       <header className="pt-3 pb-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">{view === 'watch' ? 'Watchlist' : 'I miei titoli'}</h1>
+          <h1 className="text-xl font-bold truncate">
+            {folder ? folder.name : view === 'watch' ? 'Watchlist' : 'I miei titoli'}
+          </h1>
           {loadingSum && <span className="text-[11px] text-muted">analizzo…</span>}
         </div>
         {/* toggle watchlist / comprati */}
@@ -128,10 +138,19 @@ export default function WatchlistPage({ onOpen }) {
             Comprati
           </button>
         </div>
+
+        <FolderBar
+          folders={folders}
+          folder={folder}
+          setFolderId={setFolderId}
+          createFolder={createFolder}
+          renameFolder={renameFolder}
+          deleteFolder={deleteFolder}
+        />
       </header>
 
       {view === 'watch' ? (
-        <WatchView items={items} news={news} onOpen={onOpen} empty={!watch.length} />
+        <WatchView items={items} news={news} onOpen={onOpen} empty={!items.length} folder={folder} />
       ) : (
         <OwnedView
           owned={owned}
@@ -142,22 +161,33 @@ export default function WatchlistPage({ onOpen }) {
           realizedDiv={realizedDiv}
           setCapital={setCapital}
           onOpen={onOpen}
+          folder={folder}
         />
       )}
     </div>
   )
 }
 
-function WatchView({ items, news, onOpen, empty }) {
+function WatchView({ items, news, onOpen, empty, folder }) {
   if (empty) {
     return (
       <div className="pt-14 text-center text-muted">
-        <Icon name="star" size={40} className="mx-auto mb-3 text-line" />
-        <p className="text-sm">
-          Nessun titolo in watchlist.
-          <br />
-          Apri un titolo dalla Lista e tocca la stella per seguirlo.
-        </p>
+        <Icon name={folder ? 'folder' : 'star'} size={40} className="mx-auto mb-3 text-line" />
+        {folder ? (
+          <p className="text-sm">
+            La cartella «{folder.name}» è vuota.
+            <br />
+            Apri un titolo e, in fondo, tocca la cartella
+            <br />
+            nella sezione «Cartelle» per aggiungerlo.
+          </p>
+        ) : (
+          <p className="text-sm">
+            Nessun titolo in watchlist.
+            <br />
+            Apri un titolo dalla Lista e tocca la stella per seguirlo.
+          </p>
+        )}
       </div>
     )
   }
@@ -218,7 +248,21 @@ function WatchView({ items, news, onOpen, empty }) {
   )
 }
 
-function OwnedView({ owned, totals, earned, capital, realized, realizedDiv, setCapital, onOpen }) {
+function OwnedView({ owned, totals, earned, capital, realized, realizedDiv, setCapital, onOpen, folder }) {
+  if (!owned.length && folder) {
+    return (
+      <div className="pt-14 text-center text-muted">
+        <Icon name="folder" size={40} className="mx-auto mb-3 text-line" />
+        <p className="text-sm">
+          Nessun titolo comprato in «{folder.name}».
+          <br />
+          Aggiungi alla cartella i titoli che hai comprato
+          <br />
+          per vederne qui il riepilogo.
+        </p>
+      </div>
+    )
+  }
   if (!owned.length) {
     return (
       <div className="pt-14 text-center text-muted">
@@ -241,6 +285,59 @@ function OwnedView({ owned, totals, earned, capital, realized, realizedDiv, setC
   const capitale = (capital || 0) + (realized || 0) + dividendiIncassati
   const daInvestire = capitale - totals.invested
   const plOpen = totals.value - totals.invested // plus/minus non realizzata sui titoli aperti
+
+  // In una cartella: riepilogo SOLO dei suoi titoli. Capitale immesso / realizzato restano
+  // globali (non sono legati a un titolo), quindi li mostro solo in «Tutti».
+  if (folder) {
+    const plPct = totals.invested > 0 ? (plOpen / totals.invested) * 100 : null
+    return (
+      <div className="grid grid-cols-1 gap-3 pb-safe">
+        <div className="bg-surface rounded-2xl border border-line p-3.5">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase tracking-wider text-muted truncate">
+                valore portafoglio · {folder.name}
+              </div>
+              <div className="text-2xl font-extrabold mt-0.5">{fmtMoney(totals.value, 'EUR', 2)}</div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-[10px] uppercase tracking-wider text-muted">guadagno</div>
+              <div className={`text-lg font-extrabold mt-0.5 ${plOpen >= 0 ? 'text-pos' : 'text-danger'}`}>
+                {plOpen >= 0 ? '+' : '−'}
+                {fmtMoney(Math.abs(plOpen), 'EUR', 2)}
+              </div>
+              {plPct != null && (
+                <div className={`text-[11px] font-bold ${plOpen >= 0 ? 'text-pos' : 'text-danger'}`}>
+                  {plOpen >= 0 ? '+' : '−'}
+                  {fmtPctNum(Math.abs(plPct), 2)}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="mt-2.5 pt-2.5 border-t border-line grid grid-cols-2 gap-y-1.5 text-[11px] text-muted">
+            <span>
+              investito <span className="text-ink font-semibold">{fmtMoney(totals.invested, 'EUR', 2)}</span>
+            </span>
+            <span className="text-right">
+              titoli <span className="text-ink font-semibold">{owned.length}</span>
+            </span>
+            <span>
+              dividendi incassati{' '}
+              <span className="text-accent font-semibold">{fmtMoney(earned, 'EUR', 2)}</span> netti
+            </span>
+            <span className="text-right">
+              dividendi/anno{' '}
+              <span className="text-accent font-semibold">{fmtMoney(totals.divNet, 'EUR', 2)}</span> netti
+            </span>
+          </div>
+        </div>
+
+        {owned.map(({ row, holding, stats, days }) => (
+          <OwnedCard key={row.symbol} row={row} holding={holding} stats={stats} days={days} onOpen={onOpen} />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="grid grid-cols-1 gap-3 pb-safe">
@@ -293,14 +390,16 @@ function OwnedView({ owned, totals, earned, capital, realized, realizedDiv, setC
         </div>
       </div>
 
-      {owned.map(({ row, stats, days }) => (
-        <OwnedCard key={row.symbol} row={row} stats={stats} days={days} onOpen={onOpen} />
+      {owned.map(({ row, holding, stats, days }) => (
+        <OwnedCard key={row.symbol} row={row} holding={holding} stats={stats} days={days} onOpen={onOpen} />
       ))}
     </div>
   )
 }
 
-function OwnedCard({ row, stats, days, onOpen }) {
+function OwnedCard({ row, holding, stats, days, onOpen }) {
+  const boughtAt = holding?.boughtAt ?? holding?.since ?? null
+  const heldDays = boughtAt ? -daysUntil(boughtAt) : null
   const exToday = days === 0
   const exSoon = days != null && days > 0 && days <= 7
   const up = stats?.plPct != null && stats.plPct >= 0
@@ -328,6 +427,13 @@ function OwnedCard({ row, stats, days, onOpen }) {
             {row.symbol.replace('.MI', '')}
             {stats?.qty ? ` · ≈${fmtNum(stats.qty, 2)} az · ${fmtMoney(stats.invested, 'EUR', 2)} investiti` : ''}
           </div>
+          {boughtAt && (
+            <div className="flex items-center gap-1 text-[11px] text-muted mt-0.5">
+              <Icon name="calendar" size={12} strokeWidth={1.7} />
+              comprato il <span className="text-ink font-semibold">{fmtDate(boughtAt)}</span>
+              {heldDays > 0 ? ` · da ${fmtHeld(heldDays)}` : ''}
+            </div>
+          )}
         </div>
         <div className="text-right shrink-0">
           <div className="text-sm font-bold">{fmtMoney(row.price, row.currency)}</div>
@@ -379,6 +485,65 @@ function OwnedCard({ row, stats, days, onOpen }) {
               prossimo div. ~{fmtMoney(stats.nextPayoutNet, row.currency, 2)} netti
             </span>
           )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Barra cartelle: "Tutti" + una chip per cartella + "Nuova". Sulla cartella attiva
+// compaiono Rinomina / Elimina (eliminare la cartella NON tocca titoli né acquisti).
+function FolderBar({ folders, folder, setFolderId, createFolder, renameFolder, deleteFolder }) {
+  const chip = (active) =>
+    `shrink-0 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+      active ? 'bg-accent-dim border-accent text-accent' : 'bg-surface border-line text-muted'
+    }`
+
+  const create = () => {
+    const name = window.prompt('Nome della nuova cartella (es. "Lungo termine", "Bancari")')
+    const id = createFolder(name)
+    if (id) setFolderId(id)
+  }
+  const rename = () => {
+    const name = window.prompt('Nuovo nome della cartella', folder.name)
+    if (name) renameFolder(folder.id, name)
+  }
+  const remove = () => {
+    if (window.confirm(`Eliminare la cartella «${folder.name}»?\n\nI titoli restano in watchlist e i tuoi acquisti non vengono toccati.`)) {
+      deleteFolder(folder.id)
+      setFolderId(null)
+    }
+  }
+
+  return (
+    <div className="mt-2.5">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4">
+        <button onClick={() => setFolderId(null)} className={chip(!folder)}>
+          Tutti
+        </button>
+        {folders.map((f) => (
+          <button key={f.id} onClick={() => setFolderId(f.id)} className={chip(folder?.id === f.id)}>
+            <Icon name="folder" size={14} />
+            {f.name}
+            <span className="opacity-70">{f.symbols.length}</span>
+          </button>
+        ))}
+        <button
+          onClick={create}
+          className="shrink-0 flex items-center gap-1.5 rounded-full border border-dashed border-line px-3 py-1.5 text-xs font-semibold text-muted"
+        >
+          <Icon name="plus" size={14} />
+          Nuova cartella
+        </button>
+      </div>
+      {folder && (
+        <div className="mt-2 flex gap-4 text-[11px] font-semibold">
+          <button onClick={rename} className="text-muted">
+            Rinomina
+          </button>
+          <button onClick={remove} className="text-danger">
+            Elimina cartella
+          </button>
         </div>
       )}
     </div>

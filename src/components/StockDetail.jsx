@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { api } from '../lib/api.js'
 import { computeSignals, isImportantNews } from '../lib/signals.js'
-import { fmtPct, fmtPctNum, fmtMoney, fmtNum, netYield, belowAvg, daysUntil, fmtDate, fmtDays, TAX } from '../lib/format.js'
+import { fmtPct, fmtPctNum, fmtMoney, fmtNum, netYield, belowAvg, daysUntil, fmtDate, fmtDays, TAX, toDateInput, fromDateInput, fmtHeld } from '../lib/format.js'
 import { positionStats, parseDecimal, accruedNetSince } from '../lib/portfolio.js'
 import SignalBadges from './SignalBadges.jsx'
 import Spinner from './Spinner.jsx'
@@ -12,8 +12,10 @@ import HealthCheck from './HealthCheck.jsx'
 import Icon from './Icon.jsx'
 
 export default function StockDetail({ symbol, onClose }) {
-  const { rows, summaries, loadSummary, isWatched, toggleWatch, notes, setNote, index, portfolio, setHolding, removeHolding, sellHolding } =
-    useStore()
+  const {
+    rows, summaries, loadSummary, isWatched, toggleWatch, notes, setNote, index,
+    portfolio, setHolding, removeHolding, sellHolding, folders, createFolder, toggleInFolder
+  } = useStore()
   const base = rows.find((r) => r.symbol === symbol) || { symbol, name: symbol }
   const [news, setNews] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -197,6 +199,17 @@ export default function StockDetail({ symbol, onClose }) {
             )}
           </div>
 
+          {/* cartelle: in quali portafogli sta questo titolo */}
+          <div>
+            <SectionTitle>Cartelle</SectionTitle>
+            <FolderPicker
+              symbol={symbol}
+              folders={folders}
+              onToggle={(id) => toggleInFolder(id, symbol)}
+              onCreate={(name) => createFolder(name, symbol)}
+            />
+          </div>
+
           {/* il mio acquisto: compare solo con la spunta "comprato" nell'header */}
           {owned && (
             <div>
@@ -256,6 +269,7 @@ function HoldingEditor({ row, holding, onSave }) {
   const fmtInput = (v) => (v != null ? String(v).replace('.', ',') : '')
   const [price, setPrice] = useState(() => fmtInput(holding?.price))
   const [invested, setInvested] = useState(() => fmtInput(holding?.invested))
+  const boughtAt = holding?.boughtAt ?? holding?.since ?? null
   const stats = positionStats(row, holding)
 
   const inputCls =
@@ -291,6 +305,26 @@ function HoldingEditor({ row, holding, onSave }) {
           />
         </label>
       </div>
+
+      <label className="block">
+        <span className="text-[10px] uppercase tracking-wide text-muted">Data di acquisto</span>
+        <input
+          type="date"
+          value={toDateInput(boughtAt)}
+          max={toDateInput(Date.now() / 1000)}
+          onChange={(e) => {
+            const t = fromDateInput(e.target.value)
+            if (t) onSave({ boughtAt: t })
+          }}
+          className={`${inputCls} [color-scheme:dark]`}
+        />
+        {boughtAt && (
+          <span className="block text-[11px] text-muted mt-1">
+            Comprata il <span className="text-ink font-semibold">{fmtDate(boughtAt)}</span>
+            {daysUntil(boughtAt) < 0 ? ` · da ${fmtHeld(-daysUntil(boughtAt))}` : ' · oggi'}
+          </span>
+        )}
+      </label>
 
       {stats ? (
         <>
@@ -328,6 +362,47 @@ function HoldingEditor({ row, holding, onSave }) {
         <p className="text-xs text-muted leading-snug">
           Scrivi quanto costava un’azione quando hai comprato e quanti euro ci hai messo: lo ritrovi in
           Watchlist → Comprati con guadagno e dividendi stimati.
+        </p>
+      )}
+    </div>
+  )
+}
+
+// Scelta cartelle: tocca una cartella per mettere/togliere il titolo, "+" per crearne una nuova
+// (il titolo ci finisce dentro subito).
+function FolderPicker({ symbol, folders, onToggle, onCreate }) {
+  const create = () => {
+    const name = window.prompt('Nome della nuova cartella (es. "Lungo termine", "Bancari")')
+    if (name && name.trim()) onCreate(name)
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {folders.map((f) => {
+        const on = f.symbols.includes(symbol)
+        return (
+          <button
+            key={f.id}
+            onClick={() => onToggle(f.id)}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+              on ? 'bg-accent-dim border-accent text-accent' : 'bg-surface border-line text-muted'
+            }`}
+          >
+            <Icon name={on ? 'checkFill' : 'folder'} size={14} />
+            {f.name}
+          </button>
+        )
+      })}
+      <button
+        onClick={create}
+        className="flex items-center gap-1.5 rounded-full border border-dashed border-line px-3 py-1.5 text-xs font-semibold text-muted"
+      >
+        <Icon name="plus" size={14} />
+        Nuova cartella
+      </button>
+      {!folders.length && (
+        <p className="w-full text-[11px] text-muted leading-snug">
+          Crea delle cartelle per dividere i titoli in portafogli diversi: le ritrovi in Watchlist.
         </p>
       )}
     </div>

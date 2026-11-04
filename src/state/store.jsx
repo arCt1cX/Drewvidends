@@ -25,7 +25,11 @@ export function Store({ children }) {
 
   const [watch, setWatch] = useState(() => load('dv_watch', []))
   const [notes, setNotes] = useState(() => load('dv_notes', {}))
-  // symbol -> { price: costo di 1 azione all'acquisto, invested: € totali, since: epoch spunta }
+  // Cartelle = portafogli separati creati dall'utente: [{ id, name, symbols: [...] }].
+  // Un titolo può stare in più cartelle; aggiungerlo a una cartella lo mette anche in watchlist.
+  const [folders, setFolders] = useState(() => load('dv_folders', []))
+  // symbol -> { price: costo di 1 azione all'acquisto, invested: € totali, since: epoch spunta,
+  //            boughtAt: epoch data di acquisto (modificabile, di default = giorno della spunta) }
   const [portfolio, setPortfolio] = useState(() => {
     const p = load('dv_portfolio', {})
     for (const k of Object.keys(p)) {
@@ -35,6 +39,8 @@ export function Store({ children }) {
       }
       // holding salvati prima del campo "since": i dividendi contano da oggi
       if (p[k] && p[k].since == null) p[k].since = Math.floor(Date.now() / 1000)
+      // data di acquisto: per i titoli già comprati si parte dal giorno della spunta
+      if (p[k] && p[k].boughtAt == null) p[k].boughtAt = p[k].since
     }
     return p
   })
@@ -183,6 +189,7 @@ export function Store({ children }) {
 
   useEffect(() => save('dv_watch', watch), [watch])
   useEffect(() => save('dv_notes', notes), [notes])
+  useEffect(() => save('dv_folders', folders), [folders])
   useEffect(() => save('dv_portfolio', portfolio), [portfolio])
   useEffect(() => save('dv_capital', capital), [capital])
   useEffect(() => save('dv_realized', realized), [realized])
@@ -233,12 +240,13 @@ export function Store({ children }) {
 
   // Acquisti: dati della posizione per i "titoli comprati". Alla prima spunta
   // registriamo "since": da lì contiamo gli stacchi dividendo del titolo.
+  // "boughtAt" = data di acquisto mostrata all'utente: di default il giorno della spunta.
   const setHolding = useCallback(
     (sym, data) =>
-      setPortfolio((p) => ({
-        ...p,
-        [sym]: { since: Math.floor(Date.now() / 1000), ...p[sym], ...data }
-      })),
+      setPortfolio((p) => {
+        const now = Math.floor(Date.now() / 1000)
+        return { ...p, [sym]: { since: now, boughtAt: now, ...p[sym], ...data } }
+      }),
     []
   )
   const removeHolding = useCallback(
@@ -249,6 +257,45 @@ export function Store({ children }) {
         return next
       }),
     []
+  )
+
+  // --- cartelle (portafogli) ---
+  // firstSymbol opzionale: crea la cartella con già dentro quel titolo (e lo mette in watchlist)
+  const createFolder = useCallback((name, firstSymbol) => {
+    const n = (name || '').trim()
+    if (!n) return null
+    const id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+    setFolders((f) => [...f, { id, name: n, symbols: firstSymbol ? [firstSymbol] : [] }])
+    if (firstSymbol) setWatch((w) => (w.includes(firstSymbol) ? w : [...w, firstSymbol]))
+    return id
+  }, [])
+  const renameFolder = useCallback((id, name) => {
+    const n = (name || '').trim()
+    if (!n) return
+    setFolders((f) => f.map((x) => (x.id === id ? { ...x, name: n } : x)))
+  }, [])
+  const deleteFolder = useCallback((id) => setFolders((f) => f.filter((x) => x.id !== id)), [])
+  const toggleInFolder = useCallback(
+    (id, sym) => {
+      const folder = folders.find((x) => x.id === id)
+      if (!folder) return
+      const adding = !folder.symbols.includes(sym)
+      setFolders((f) =>
+        f.map((x) =>
+          x.id !== id
+            ? x
+            : {
+                ...x,
+                symbols: adding
+                  ? [...x.symbols.filter((s) => s !== sym), sym]
+                  : x.symbols.filter((s) => s !== sym)
+              }
+        )
+      )
+      // in cartella = seguito: lo aggiungo anche alla watchlist (serve per la spunta "comprato")
+      if (adding) setWatch((w) => (w.includes(sym) ? w : [...w, sym]))
+    },
+    [folders]
   )
 
   const setCapital = useCallback((v) => setCapitalState(v != null && v >= 0 ? round2(v) : 0), [])
@@ -309,6 +356,11 @@ export function Store({ children }) {
     isWatched,
     notes,
     setNote,
+    folders,
+    createFolder,
+    renameFolder,
+    deleteFolder,
+    toggleInFolder,
     portfolio,
     setHolding,
     removeHolding,

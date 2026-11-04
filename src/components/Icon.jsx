@@ -127,6 +127,8 @@ const PATHS = {
       />
     </>
   ),
+  folder: (p) => <path {...p} d="M3.5 7.5a2 2 0 012-2h4l2 2.2h7a2 2 0 012 2V17a2 2 0 01-2 2h-13a2 2 0 01-2-2z" />,
+  plus: (p) => <path {...p} d="M12 5v14M5 12h14" />,
   note: (p) => (
     <>
       <path {...p} d="M5 4h11l4 4v12H5z" />

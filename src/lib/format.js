@@ -101,3 +101,29 @@ export function fmtDays(d) {
   const m = Math.round(d / 30)
   return `tra ~${m} mesi`
 }
+
+// epoch (sec) -> "AAAA-MM-GG" per <input type="date"> (data locale, non UTC)
+export function toDateInput(epochSec) {
+  if (!epochSec) return ''
+  const d = new Date(epochSec * 1000)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+// "AAAA-MM-GG" -> epoch (sec) a mezzogiorno locale (evita slittamenti di fuso). null se vuoto.
+export function fromDateInput(str) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str || '')
+  if (!m) return null
+  return Math.floor(new Date(+m[1], +m[2] - 1, +m[3], 12).getTime() / 1000)
+}
+
+// "3 giorni" / "5 mesi" / "1 anno e 2 mesi": da quanto tempo hai il titolo
+export function fmtHeld(days) {
+  if (days == null || days < 1) return 'oggi'
+  if (days < 31) return days === 1 ? '1 giorno' : `${days} giorni`
+  const months = Math.floor(days / 30.44)
+  if (months < 12) return months <= 1 ? '1 mese' : `${months} mesi`
+  const y = Math.floor(months / 12)
+  const m = months % 12
+  return `${y === 1 ? '1 anno' : `${y} anni`}${m ? ` e ${m === 1 ? '1 mese' : `${m} mesi`}` : ''}`
+}
